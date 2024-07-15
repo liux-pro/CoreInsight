@@ -1,8 +1,8 @@
 Listings
 *.uvopt
 *.uvgui.Legend
+uv4.log
 
 Objects/*
-!Objects/*.hex
 
 .vscode

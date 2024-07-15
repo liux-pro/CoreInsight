@@ -272,7 +272,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>library,usb</IncludePath>
+              <IncludePath>library,usb,lcd</IncludePath>
             </VariousControls>
           </C251>
           <Ax51>
@@ -359,6 +359,41 @@
               <FileType>5</FileType>
               <FilePath>.\library\config.h</FilePath>
             </File>
+            <File>
+              <FileName>STC32G_Clock.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\library\STC32G_Clock.c</FilePath>
+            </File>
+            <File>
+              <FileName>STC32G_Clock.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\library\STC32G_Clock.h</FilePath>
+            </File>
+            <File>
+              <FileName>STC32G_NVIC.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\library\STC32G_NVIC.c</FilePath>
+            </File>
+            <File>
+              <FileName>STC32G_NVIC.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\library\STC32G_NVIC.h</FilePath>
+            </File>
+            <File>
+              <FileName>STC32G_SPI.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\library\STC32G_SPI.c</FilePath>
+            </File>
+            <File>
+              <FileName>STC32G_SPI.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\library\STC32G_SPI.h</FilePath>
+            </File>
+            <File>
+              <FileName>STC32G_Switch.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\library\STC32G_Switch.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -433,6 +468,51 @@
               <FileName>util.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\usb\util.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>lcd</GroupName>
+          <Files>
+            <File>
+              <FileName>FONT.H</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\lcd\FONT.H</FilePath>
+            </File>
+            <File>
+              <FileName>LCD.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\lcd\LCD.c</FilePath>
+            </File>
+            <File>
+              <FileName>LCD.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\lcd\LCD.h</FilePath>
+            </File>
+            <File>
+              <FileName>pic.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\lcd\pic.h</FilePath>
+            </File>
+            <File>
+              <FileName>sys.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\lcd\sys.c</FilePath>
+            </File>
+            <File>
+              <FileName>sys.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\lcd\sys.h</FilePath>
+            </File>
+            <File>
+              <FileName>test code.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\lcd\test code.c</FilePath>
+            </File>
+            <File>
+              <FileName>test code.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\lcd\test code.h</FilePath>
             </File>
           </Files>
         </Group>
