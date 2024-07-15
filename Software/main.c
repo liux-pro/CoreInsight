@@ -11,6 +11,7 @@
 #include "STC32G_Switch.h"
 #include "STC32G_NVIC.h"
 #include "STC32G_Clock.h"
+#include <string.h>
 
 /*
 IRC频率必须是 35.000MHz
@@ -74,7 +75,9 @@ void SPI_config1(void)
 void main(void)
 {
 	u16 line;
-	u16 i, j;
+	u32 i, j;
+	u16 color;
+	BYTE *p_UsbBuffer;
 	WTST = 0;  // 设置程序指令延时参数，赋值为0可将CPU执行指令的速度设置为最快
 	EAXFR = 1; // 扩展寄存器(XFR)访问使能
 	CKCON = 0; // 提高访问XRAM速度
@@ -87,43 +90,48 @@ void main(void)
 
 	LCD_Init(); // 初始化LCD
 
-	LCD_Display_Dir(USE_LCM_DIR); // 屏幕方向
+	LCD_Display_Dir(2); // 屏幕方向
 
 	P2_MODE_IO_PU(GPIO_Pin_0);
 	LCD_Clear(BLACK);
 	while (1)
 	{
 
-		P20 = !P20;
-
-		// LCD_Set_Window(0, 0, 240, 320);
-		// P21 = !P21;
-
-		// LCD_WriteRAM_Prepare(); // 开始写入GRAM
-		// P22 = !P22;
-
-		// LCD_Draw_Circle(100, 100, 50);
-
-		// P23 = !P23;
-		// DrawTestPage("中文显示测试");
-	
-		POINT_COLOR=RED;	//画笔颜色
-		BACK_COLOR=WHITE;  //背景色 
-	
-		Show_Str(10,30,"16X16:鸿讯电子",16,1);
-		Show_Str(10,50,"16X16:TFT液晶显示屏",16,1);
-		Show_Str(10,70,"24X24:中文显示",24,1);
-
-		Show_Str(10,100,"32X32:测试程序",32,1);
-		Show_Str(10,150,"32X32:测试程序",32,1);
-		Show_Str(10,200,"32X32:测试程序",32,1);
-		Show_Str(10,250,"32X32:测试程序",32,1);
-		Show_Str(10,300,"32X32:测试程序",32,1);
-
 		if (bUsbOutReady)
 		{
 			usbOutDone();
 			usbCheckUpdate(); // 检测是否为升级信息
+			if (strcmp(UsbBuffer, "@REFRESH#") == 0)
+			{
+				P20 = !P20;
+				LCD_Set_Window(0, 0, 320, 240);
+				LCD_WriteRAM_Prepare(); // 开始写入GRAM
+				SPI_DC = 1;
+			}
+			else
+			{
+				p_UsbBuffer = UsbBuffer;
+				for (i = 0; i < 64; i++)
+				{
+					SPDAT = *(p_UsbBuffer++);
+					_nop_();
+					_nop_();
+					_nop_();
+					_nop_();
+					_nop_();
+					_nop_();
+					_nop_();
+					_nop_();
+					_nop_();
+					_nop_();
+					_nop_();
+					_nop_();
+					_nop_();
+					_nop_();
+					_nop_();
+					_nop_();
+				}
+			}
 		}
 	}
 }
