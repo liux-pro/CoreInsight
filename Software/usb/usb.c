@@ -7,7 +7,6 @@
 /* --- Web: www.STCAI.com ---------------------------------------------*/
 /* --- BBS: www.STCAIMCU.com  -----------------------------------------*/
 /* --- QQ:  800003751 -------------------------------------------------*/
-/* Èç¹ûÒªÔÚ³ÌÐòÖÐÊ¹ÓÃ´Ë´úÂë,ÇëÔÚ³ÌÐòÖÐ×¢Ã÷Ê¹ÓÃÁËSTCµÄ×ÊÁÏ¼°³ÌÐò        */
 /*---------------------------------------------------------------------*/
 
 #include "stc.h"
@@ -16,13 +15,37 @@
 #include "usb_req_class.h"
 #include "usb_req_vendor.h"
 #include "util.h"
-
+#include <string.h>
 BYTE DeviceState;
 SETUP Setup;
 EPSTATE Ep0State;
 BYTE InEpState;
 BYTE OutEpState;
 BYTE xdata UsbBuffer[256];
+
+BYTE bUsbOutReady = 0;
+BYTE bUsbInBusy = 0;
+BYTE bUsbUpdateEnable = 1;
+
+extern char *USER_STCISPCMD;
+
+void ___sleep_us(WORD n)
+{
+    while (n--)
+    {
+        _nop_();
+        _nop_();
+        _nop_();
+        _nop_();
+    }
+}
+
+void ___sleep_ms(WORD n)
+{
+    while (n--)
+        ___sleep_us(10000);
+}
+
 
 void usb_init()
 {
@@ -98,7 +121,7 @@ void usb_isr() interrupt USB_VECTOR
     BYTE introut;
     BYTE adrTemp;
 
-    adrTemp = USBADR;     //USBADR ÏÖ³¡±£´æ£¬±ÜÃâÖ÷Ñ­»·ÀïÐ´Íê USBADR ºó²úÉúÖÐ¶Ï£¬ÔÚÖÐ¶ÏÀïÐÞ¸ÄÁË USBADR ÄÚÈÝ
+    adrTemp = USBADR;     //USBADR ï¿½Ö³ï¿½ï¿½ï¿½ï¿½æ£¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ­ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ USBADR ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï£ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½Þ¸ï¿½ï¿½ï¿? USBADR ï¿½ï¿½ï¿½ï¿½
 
     intrusb = usb_read_reg(INTRUSB);
     intrin = usb_read_reg(INTRIN1);
@@ -143,7 +166,7 @@ void usb_isr() interrupt USB_VECTOR
 
     if (intrusb & SUSIF) usb_suspend();
 
-    USBADR = adrTemp;    //USBADR ÏÖ³¡»Ö¸´
+    USBADR = adrTemp;    //USBADR ï¿½Ö³ï¿½ï¿½Ö¸ï¿½
 }
 
 void usb_resume()
@@ -212,12 +235,12 @@ void usb_setup()
 
     if (csr & STSTL)
     {
-        usb_write_reg(CSR0, csr & ~STSTL);  //¶Ô×Ô¼ºÐ´ 0 Çå³ý±êÖ¾Î»
+        usb_write_reg(CSR0, csr & ~STSTL);  //ï¿½ï¿½ï¿½Ô¼ï¿½Ð´ 0 ï¿½ï¿½ï¿½ï¿½ï¿½Ö¾Î?
         Ep0State.bState = EPSTATE_IDLE;
     }
     if (csr & SUEND)
     {
-        usb_write_reg(CSR0, csr | SSUEND);  //¶Ô SSUEND Ð´ 1 Çå³ý SUEND ±êÖ¾Î»
+        usb_write_reg(CSR0, csr | SSUEND);  //ï¿½ï¿½ SSUEND Ð´ 1 ï¿½ï¿½ï¿? SUEND ï¿½ï¿½Ö¾Î»
     }
 
     switch (Ep0State.bState)
@@ -356,6 +379,7 @@ void usb_in_ep1()
     {
         usb_write_reg(INCSR1, 0);
     }
+		    //bUsbInBusy = 0;
 }
 #endif
 
@@ -444,7 +468,9 @@ void usb_out_ep1()
     }
     if (csr & OUTOPRDY)
     {
-        usb_bulk_intr_in(UsbBuffer, usb_bulk_intr_out(UsbBuffer, 1), 1);    //¹¦ÄÜ²âÊÔ,Ô­Â··µ»Ø
+        // usb_bulk_intr_in(UsbBuffer, usb_bulk_intr_out(UsbBuffer, 1), 1);   
+usb_bulk_intr_out(UsbBuffer, 1)			;
+        bUsbOutReady = 1;
     }
 }
 #endif
@@ -520,3 +546,42 @@ void usb_out_ep5()
     }
 }
 #endif
+
+void usbCheckUpdate(){                                           
+    if (strcmp(UsbBuffer, USER_STCISPCMD) == 0)
+    {
+        usb_write_reg(OUTCSR1, 0);
+
+        USBCON = 0x00;
+        USBCLK = 0x00;
+        IRC48MCR = 0x00;
+
+        ___sleep_ms(10);
+
+        IAP_CONTR = 0x60;
+        while (1);
+    }
+}
+
+//void usb_bulk_intr_in(BYTE *pData, BYTE bSize, BYTE ep)
+//void usb_write_fifo(BYTE fifo, BYTE *pdat, BYTE cnt)
+void usbSend2PC(BYTE* buffer)
+{
+    BYTE cnt = 64;
+    
+    usb_write_reg(INDEX, 1);
+    while (usb_read_reg(INCSR1) & INIPRDY);
+	while (cnt--)
+	{
+        usb_write_reg((BYTE)(FIFO0 + 1), *buffer++);
+    }
+    usb_write_reg(INCSR1, INIPRDY);    
+    //bUsbInBusy = 1;
+}
+
+void usbOutDone()
+{
+    usb_write_reg(INDEX, 1);
+    usb_write_reg(OUTCSR1, 0);
+    bUsbOutReady = 0;
+}
