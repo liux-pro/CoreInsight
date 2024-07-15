@@ -21,103 +21,46 @@ _lcd_dev lcddev;
 //写寄存器函数
 void LCD_WR_REG(u16 REG)
 { 
-		//u8 i;	
-		//u8 d[2];
-
-
-		//SPI_CS = 0;		
-		SPI_DC = 0;//RS=0 命令
-		
-		// for(i=0; i<8; i++)
-		// {
-		// 	if (REG & 0x80)
-		// 	 SPI_SDI = 1;
-		// 	else
-		// 	 SPI_SDI = 0;
-			
-		// 	REG <<= 1;		 
-		// 	SPI_SCK = 0;		  
-		// 	SPI_SCK = 1;
-		// }
-    // d[0] = (u8)(REG >> 8);
-    // d[1] = (u8)(REG & 0xff);
-	
-	// 	SPI_WriteByte(d[0]);	
-	// 	SPI_WriteByte(d[1]);
-
-//SPI_WriteByte( (u8)(REG & 0xff ));
+	SPI_DC = 0;//RS=0 命令
     SPDAT = (u8)(REG & 0xff );
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-
-	//SPI_CS=1;	
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
 }
 //写数据函数
 void LCD_WR_DATA(u16 DATA)
-{
-//		u8 i;
-//		u8 d[2];
-
-	
-		//SPI_CS = 0;		
-		SPI_DC = 1;//RS=1 数据
-		
-		// for(i=0; i<8; i++)
-		// {
-		// 	if (DATA & 0x80)
-		// 	 SPI_SDI = 1;
-		// 	else
-		// 	 SPI_SDI = 0;
-			
-		// 	DATA <<= 1;		 
-		// 	SPI_SCK = 0;		  
-		// 	SPI_SCK = 1;
-		// }
-    // d[0] = (u8)(DATA >> 8);
-    // d[1] = );
-	
-	// 	SPI_WriteByte(d[0]);	
-	// 	SPI_WriteByte(d[1]);
-
-
-
-//SPI_WriteByte( (u8)(DATA & 0xff ));
-
-
-    SPDAT = (u8)(DATA & 0xff );
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-
-		//SPI_CS=1;
-	
+{	
+	SPI_DC = 1;//RS=1 数据
+    SPDAT = DATA;
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
 }
 
 //写寄存器
@@ -138,75 +81,41 @@ void LCD_WriteRAM_Prepare(void)
 //RGB_Code:颜色值
 void LCD_WriteRAM(u16 RGB_Code)
 {							    
-  //u8 i;
-  //			u8 d[2];
-
-	//SPI_CS = 0;
 	SPI_DC = 1;
-
-	// for(i=0; i<16; i++)
-	// {
-	// 	if (RGB_Code & 0x8000)
-	// 	 SPI_SDI = 1;
-	// 	else
-	// 	 SPI_SDI = 0;
-		
-	// 	RGB_Code <<= 1;		 
-	// 	SPI_SCK = 0;		  
-	// 	SPI_SCK = 1;
-	// } 
-	// SPI_WriteByte(0xAA);
-	// SPI_WriteByte(0xAA);
-
-
-
-	// d[0] = (u8)(RGB_Code >> 8);
-    // d[1] = (u8)(RGB_Code & 0xff);
-	
-	// 	SPI_WriteByte(d[0]);	
-	// 	SPI_WriteByte(d[1]);
-
-
-
-
-
-		SPDAT = (u8)(RGB_Code >> 8);
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-		SPDAT = (u8)(RGB_Code & 0xff );
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-_nop_();
-
-
-	//SPI_CS=1;
+	SPDAT = (u8)(RGB_Code >> 8);
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	SPDAT = (u8)(RGB_Code & 0xff );
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
+	_nop_();
 }
 
 //当mdk -O1时间优化时需要设置
