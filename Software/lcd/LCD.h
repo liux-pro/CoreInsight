@@ -96,6 +96,49 @@ void LCD_WR_DATA(u16 DATA);
 void LCD_WriteReg(u16 LCD_Reg, u16 LCD_RegValue);
 void LCD_WriteRAM_Prepare(void);
 void LCD_WriteRAM(u16 RGB_Code);
+
+// RGB_Code u16
+#define LCD_WriteRAM_Inline(RGB_Code)          \
+	do                                   \
+	{                                    \
+		SPI_DC = 1;                      \
+		SPDAT = (u8)((RGB_Code) >> 8);   \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		SPDAT = (u8)((RGB_Code) & 0xff); \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+	} while (0)
+
+
+
 void Load_Drow_Dialog(void);
 void LCD_Set_Window(u16 sx,u16 sy,u16 width,u16 height);	//设置窗口				
 void Show_Str(u16 x, u16 y,u8 *str,u8 size,u8 mode);//显示中文

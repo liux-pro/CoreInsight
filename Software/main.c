@@ -71,45 +71,6 @@ void SPI_config1(void)
 	// 对于stc32g12k128 ，由于IO速度原因，5v环境最高33M，3.3v环境最高20M，这里的24M是略微超限的。
 }
 
-#define LCD_WriteRAM2(RGB_Code)          \
-	do                                   \
-	{                                    \
-		SPI_DC = 1;                      \
-		SPDAT = (u8)((RGB_Code) >> 8);   \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		SPDAT = (u8)((RGB_Code) & 0xff); \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-		_nop_();                         \
-	} while (0)
-
 void main(void)
 {
 	u16 line;
@@ -117,6 +78,7 @@ void main(void)
 	WTST = 0;  // 设置程序指令延时参数，赋值为0可将CPU执行指令的速度设置为最快
 	EAXFR = 1; // 扩展寄存器(XFR)访问使能
 	CKCON = 0; // 提高访问XRAM速度
+	P2_MODE_IO_PU(GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3);
 
 	usb_init();
 	EA = 1;
@@ -147,28 +109,28 @@ void main(void)
 				{
 					for (j = 0; j < 240 / 8; j++)
 					{
-						LCD_WriteRAM2(BLACK);
-						LCD_WriteRAM2(BLACK);
-						LCD_WriteRAM2(BLACK);
-						LCD_WriteRAM2(BLACK);
-						LCD_WriteRAM2(BLACK);
-						LCD_WriteRAM2(BLACK);
-						LCD_WriteRAM2(BLACK);
-						LCD_WriteRAM2(BLACK);
+						LCD_WriteRAM_Inline(BLACK);
+						LCD_WriteRAM_Inline(BLACK);
+						LCD_WriteRAM_Inline(BLACK);
+						LCD_WriteRAM_Inline(BLACK);
+						LCD_WriteRAM_Inline(BLACK);
+						LCD_WriteRAM_Inline(BLACK);
+						LCD_WriteRAM_Inline(BLACK);
+						LCD_WriteRAM_Inline(BLACK);
 					}
 				}
 				else
 				{
 					for (j = 0; j < 240 / 8; j++)
 					{
-						LCD_WriteRAM2(RED);
-						LCD_WriteRAM2(RED);
-						LCD_WriteRAM2(RED);
-						LCD_WriteRAM2(RED);
-						LCD_WriteRAM2(RED);
-						LCD_WriteRAM2(RED);
-						LCD_WriteRAM2(RED);
-						LCD_WriteRAM2(RED);
+						LCD_WriteRAM_Inline(RED);
+						LCD_WriteRAM_Inline(RED);
+						LCD_WriteRAM_Inline(RED);
+						LCD_WriteRAM_Inline(RED);
+						LCD_WriteRAM_Inline(RED);
+						LCD_WriteRAM_Inline(RED);
+						LCD_WriteRAM_Inline(RED);
+						LCD_WriteRAM_Inline(RED);
 					}
 				}
 			}
