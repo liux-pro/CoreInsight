@@ -47,8 +47,23 @@ void LCD_WR_REG(u16 REG)
 
 //SPI_WriteByte( (u8)(REG & 0xff ));
     SPDAT = (u8)(REG & 0xff );
-		_nop_();
-		_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+
 	//SPI_CS=1;	
 }
 //Ð´Êý¾Ýº¯Êý
@@ -84,7 +99,23 @@ void LCD_WR_DATA(u16 DATA)
 
 
     SPDAT = (u8)(DATA & 0xff );
-		_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+
 		//SPI_CS=1;
 	
 }
@@ -140,23 +171,39 @@ void LCD_WriteRAM(u16 RGB_Code)
 
 
 		SPDAT = (u8)(RGB_Code >> 8);
-		_nop_();
-		_nop_();
-	    _nop_();
-		_nop_();
-		_nop_();
-		_nop_();
-	  _nop_();
-		_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
 		SPDAT = (u8)(RGB_Code & 0xff );
-		_nop_();
-		_nop_();
-		_nop_();
-		_nop_();
-		_nop_();
-		_nop_();
-	  _nop_();
-
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
+_nop_();
 
 
 	//SPI_CS=1;
@@ -326,7 +373,7 @@ void LCD_Init(void)
 {
 	
 	SPI_RST=1;
-	delay_ms(1);
+	delay_ms(10);
 	SPI_RST=0;
 	delay_ms(10);
 	SPI_RST=1;

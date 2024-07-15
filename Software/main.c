@@ -13,7 +13,7 @@
 #include "STC32G_Clock.h"
 
 /*
-下载时，IRC频率必须是 24.000MHz
+IRC频率必须是 35.000MHz
 */
 
 char *USER_STCISPCMD = "@STCISP#"; // 设置自动复位到ISP区的用户接口命令
@@ -48,9 +48,27 @@ void SPI_config1(void)
 	P1_MODE_IO_PU(GPIO_Pin_3 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7);
 	P1_PULL_UP_ENABLE(GPIO_Pin_3 | GPIO_Pin_5);
 	P1_SPEED_HIGH(GPIO_Pin_3 | GPIO_Pin_5); // 电平转换速度快（提高IO口翻转速度）
+	{
+		/*
+			这个函数不满足需求，改库函数不太好的原则，这里把他的函数体复制出来，改一改。
+			HSPllClkConfig(MCLKSEL_HIRC, PLL_96M, 2); 系统时钟选择,PLL时钟选择,时钟分频系数 
+		*/
+		MainClockSel(MCLKSEL_HIRC); // 系统时钟选择, MCLKSEL_HIRC/MCLKSEL_XIRC/MCLKSEL_X32K/MCLKSEL_I32K/MCLKSEL_PLL/MCLKSEL_PLL2/MCLKSEL_I48M
+		
+		// HIRC 在下载时调为35M，四分频后8M多一点，将将满足输入频率12M（±35%）的需求
+		USBCLK &= ~PCKI_MSK;
+		USBCLK |= PCKI_D4; // PLL输入时钟4分频
 
-	HSPllClkConfig(MCLKSEL_HIRC, PLL_96M, 2); // 系统时钟选择,PLL时钟选择,时钟分频系数
+		PLLClockSel(PLL_96M);	// PLL时钟选择, PLL_96M/PLL_144M
+		PLLEnable(ENABLE);		// PLL倍频使能, ENABLE/DISABLE
+		delay_ms(2);			// 等待PLL锁频
+		HSIOClockSel(HSCK_PLL); // 高速IO时钟选择, HSCK_MCLK/HSCK_PLL
+		HSClockDiv(2);			// 高速IO时钟分频系数
+	}
+
 	HSSPI_Enable();
+	// SPI（HSPI）的频率 = HIRC 35M 四分频 输入 PLL 出来变成 96M 二分频 48M 进入 HSPI外设 SPI自己也有2分频 最终24M
+	// 对于stc32g12k128 ，由于IO速度原因，5v环境最高33M，3.3v环境最高20M，这里的24M是略微超限的。
 }
 
 #define LCD_WriteRAM2(RGB_Code)          \
@@ -58,6 +76,14 @@ void SPI_config1(void)
 	{                                    \
 		SPI_DC = 1;                      \
 		SPDAT = (u8)((RGB_Code) >> 8);   \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
 		_nop_();                         \
 		_nop_();                         \
 		_nop_();                         \
@@ -74,13 +100,20 @@ void SPI_config1(void)
 		_nop_();                         \
 		_nop_();                         \
 		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
+		_nop_();                         \
 	} while (0)
 
 void main(void)
 {
 	u16 line;
 	u16 i, j;
-
 	WTST = 0;  // 设置程序指令延时参数，赋值为0可将CPU执行指令的速度设置为最快
 	EAXFR = 1; // 扩展寄存器(XFR)访问使能
 	CKCON = 0; // 提高访问XRAM速度
@@ -98,7 +131,7 @@ void main(void)
 
 	while (1)
 	{
-		for (line = 0; line < 240; line++)
+		for (line = 0; line < 320; line++)
 		{
 			P20 = !P20;
 
@@ -112,8 +145,17 @@ void main(void)
 			{
 				if (i == line)
 				{
-					for (j = 0; j < 240; j++)
-						LCD_WriteRAM2(BLUE);
+					for (j = 0; j < 240 / 8; j++)
+					{
+						LCD_WriteRAM2(BLACK);
+						LCD_WriteRAM2(BLACK);
+						LCD_WriteRAM2(BLACK);
+						LCD_WriteRAM2(BLACK);
+						LCD_WriteRAM2(BLACK);
+						LCD_WriteRAM2(BLACK);
+						LCD_WriteRAM2(BLACK);
+						LCD_WriteRAM2(BLACK);
+					}
 				}
 				else
 				{
