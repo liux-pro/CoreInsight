@@ -51,10 +51,10 @@ void SPI_config1(void)
 	{
 		/*
 			这个函数不满足需求，改库函数不太好的原则，这里把他的函数体复制出来，改一改。
-			HSPllClkConfig(MCLKSEL_HIRC, PLL_96M, 2); 系统时钟选择,PLL时钟选择,时钟分频系数 
+			HSPllClkConfig(MCLKSEL_HIRC, PLL_96M, 2); 系统时钟选择,PLL时钟选择,时钟分频系数
 		*/
 		MainClockSel(MCLKSEL_HIRC); // 系统时钟选择, MCLKSEL_HIRC/MCLKSEL_XIRC/MCLKSEL_X32K/MCLKSEL_I32K/MCLKSEL_PLL/MCLKSEL_PLL2/MCLKSEL_I48M
-		
+
 		// HIRC 在下载时调为35M，四分频后8M多一点，将将满足输入频率12M（±35%）的需求
 		USBCLK &= ~PCKI_MSK;
 		USBCLK |= PCKI_D4; // PLL输入时钟4分频
@@ -90,57 +90,40 @@ void main(void)
 	LCD_Display_Dir(USE_LCM_DIR); // 屏幕方向
 
 	P2_MODE_IO_PU(GPIO_Pin_0);
-
+	LCD_Clear(BLACK);
 	while (1)
 	{
-		for (line = 0; line < 320; line++)
+
+		P20 = !P20;
+
+		// LCD_Set_Window(0, 0, 240, 320);
+		// P21 = !P21;
+
+		// LCD_WriteRAM_Prepare(); // 开始写入GRAM
+		// P22 = !P22;
+
+		// LCD_Draw_Circle(100, 100, 50);
+
+		// P23 = !P23;
+		// DrawTestPage("中文显示测试");
+	
+		POINT_COLOR=RED;	//画笔颜色
+		BACK_COLOR=WHITE;  //背景色 
+	
+		Show_Str(10,30,"16X16:鸿讯电子",16,1);
+		Show_Str(10,50,"16X16:TFT液晶显示屏",16,1);
+		Show_Str(10,70,"24X24:中文显示",24,1);
+
+		Show_Str(10,100,"32X32:测试程序",32,1);
+		Show_Str(10,150,"32X32:测试程序",32,1);
+		Show_Str(10,200,"32X32:测试程序",32,1);
+		Show_Str(10,250,"32X32:测试程序",32,1);
+		Show_Str(10,300,"32X32:测试程序",32,1);
+
+		if (bUsbOutReady)
 		{
-			P20 = !P20;
-
-			LCD_Set_Window(0, 0, 240, 320);
-			P21 = !P21;
-
-			LCD_WriteRAM_Prepare(); // 开始写入GRAM
-			P22 = !P22;
-
-			for (i = 0; i < 320; i++)
-			{
-				if (i == line)
-				{
-					for (j = 0; j < 240 / 8; j++)
-					{
-						LCD_WriteRAM_Inline(BLACK);
-						LCD_WriteRAM_Inline(BLACK);
-						LCD_WriteRAM_Inline(BLACK);
-						LCD_WriteRAM_Inline(BLACK);
-						LCD_WriteRAM_Inline(BLACK);
-						LCD_WriteRAM_Inline(BLACK);
-						LCD_WriteRAM_Inline(BLACK);
-						LCD_WriteRAM_Inline(BLACK);
-					}
-				}
-				else
-				{
-					for (j = 0; j < 240 / 8; j++)
-					{
-						LCD_WriteRAM_Inline(RED);
-						LCD_WriteRAM_Inline(RED);
-						LCD_WriteRAM_Inline(RED);
-						LCD_WriteRAM_Inline(RED);
-						LCD_WriteRAM_Inline(RED);
-						LCD_WriteRAM_Inline(RED);
-						LCD_WriteRAM_Inline(RED);
-						LCD_WriteRAM_Inline(RED);
-					}
-				}
-			}
-
-			P23 = !P23;
-			if (bUsbOutReady)
-			{
-				usbOutDone();
-				usbCheckUpdate(); // 检测是否为升级信息
-			}
+			usbOutDone();
+			usbCheckUpdate(); // 检测是否为升级信息
 		}
 	}
 }

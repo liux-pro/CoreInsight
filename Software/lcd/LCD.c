@@ -358,60 +358,60 @@ LCD_WR_REG(0x29);
 } 
 
 
-//读取个某点的颜色值	 
-//x,y:坐标
-//返回值:此点的颜色
-u16 LCD_ReadPoint(u16 x,u16 y)
-{
-u8 i,r,g,b,reg=0x2e;
- 	u16 color;
-	if(x>=lcddev.width||y>=lcddev.height)return 0;	//超过了范围,直接返回		   
-	LCD_SetCursor(x,y);
-	SPI_CS = 0;		
-	SPI_DC = 0;
+// //读取个某点的颜色值	 
+// //x,y:坐标
+// //返回值:此点的颜色
+// u16 LCD_ReadPoint(u16 x,u16 y)
+// {
+// u8 i,r,g,b,reg=0x2e;
+//  	u16 color;
+// 	if(x>=lcddev.width||y>=lcddev.height)return 0;	//超过了范围,直接返回		   
+// 	LCD_SetCursor(x,y);
+// 	SPI_CS = 0;		
+// 	SPI_DC = 0;
 		
-		for(i=0; i<8; i++)
-		{
-			if (reg & 0x80)
-			 SPI_SDI = 1;
-			else
-			 SPI_SDI = 0;
+// 		for(i=0; i<8; i++)
+// 		{
+// 			if (reg & 0x80)
+// 			 SPI_SDI = 1;
+// 			else
+// 			 SPI_SDI = 0;
 			
-			reg <<= 1;		 
-			SPI_SCK = 0;  
-			SPI_SCK = 1;	
-		}
+// 			reg <<= 1;		 
+// 			SPI_SCK = 0;  
+// 			SPI_SCK = 1;	
+// 		}
 
-		for(i=0; i<8; i++)							//第一次空读 后三次分别为R G B
-		{
-			SPI_SCK = 0;		 	
-			SPI_SCK = 1;			
-		}
+// 		for(i=0; i<8; i++)							//第一次空读 后三次分别为R G B
+// 		{
+// 			SPI_SCK = 0;		 	
+// 			SPI_SCK = 1;			
+// 		}
 
-		for(i=0; i<8; i++)
-		{
-			SPI_SCK = 0;		r=r << 1 | SPI_SDO; 	
-			SPI_SCK = 1;			
-		}
+// 		for(i=0; i<8; i++)
+// 		{
+// 			SPI_SCK = 0;		r=r << 1 | SPI_SDO; 	
+// 			SPI_SCK = 1;			
+// 		}
 
-		for(i=0; i<8; i++)
-		{
-			SPI_SCK = 0;		g=g << 1 | SPI_SDO; 	
-			SPI_SCK = 1;			
-		}
+// 		for(i=0; i<8; i++)
+// 		{
+// 			SPI_SCK = 0;		g=g << 1 | SPI_SDO; 	
+// 			SPI_SCK = 1;			
+// 		}
 
-		for(i=0; i<8; i++)
-		{
-			SPI_SCK = 0;		b=b << 1 | SPI_SDO; 	
-			SPI_SCK = 1;			
-		}		
+// 		for(i=0; i<8; i++)
+// 		{
+// 			SPI_SCK = 0;		b=b << 1 | SPI_SDO; 	
+// 			SPI_SCK = 1;			
+// 		}		
 		
-		color = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
+// 		color = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
 				
-		SPI_CS=1;	
+// 		SPI_CS=1;	
 	
-return color;
-}		
+// return color;
+// }		
   
 //清屏函数
 //color:要清屏的填充色
