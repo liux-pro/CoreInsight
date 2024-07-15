@@ -37,6 +37,7 @@ void main(void)
 
 	while (1)
 	{
+		Delay1000ms();
         if(bUsbOutReady){
             usbOutDone();
             usbCheckUpdate();                           //检测是否为升级信息            
