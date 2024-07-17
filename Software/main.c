@@ -1,7 +1,7 @@
 #include "STC32G.H"
 #include "stc.h"
 #include "usb.h"
-#include "usb_hid.h"
+#include "uart.h"
 #include "stdio.h"
 #include "intrins.h"
 #include "STC32G_GPIO.h"
@@ -12,12 +12,11 @@
 #include "STC32G_NVIC.h"
 #include "STC32G_Clock.h"
 #include <string.h>
+#include "communicate.h"
 
 /*
 IRC频率必须是 35.000MHz
 */
-
-char *USER_STCISPCMD = "@STCISP#"; // 设置自动复位到ISP区的用户接口命令
 
 void Delay1000ms(void) //@24.000MHz
 {
@@ -72,6 +71,30 @@ void SPI_config1(void)
 	// 对于stc32g12k128 ，由于IO速度原因，5v环境最高33M，3.3v环境最高20M，这里的24M是略微超限的。
 }
 
+/**
+ * 检查是否接收到特定的ISP固件升级请求。
+ */
+void checkISP()
+{
+	// 怕编译器优化太傻，不能优化strlen,直接写8
+	if (memcmp("@STCISP#", RxBuffer, 8) == 0)
+	{
+		usb_write_reg(OUTCSR1, 0);
+
+		USBCON = 0x00;
+		USBCLK = 0x00;
+		IRC48MCR = 0x00;
+
+		delay_ms(10);
+		// 复位到bootloader
+		IAP_CONTR = 0x60;
+		while (1)
+			;
+	}
+}
+
+u8 xdata b[1024*6]={0};
+
 void main(void)
 {
 	u16 line;
@@ -83,6 +106,7 @@ void main(void)
 	CKCON = 0; // 提高访问XRAM速度
 	P2_MODE_IO_PU(GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3);
 
+	uart_init();
 	usb_init();
 	EA = 1;
 
@@ -92,46 +116,68 @@ void main(void)
 
 	LCD_Display_Dir(2); // 屏幕方向
 
-	P2_MODE_IO_PU(GPIO_Pin_0);
 	LCD_Clear(BLACK);
+	LCD_Set_Window(0, 0, 320, 240);
+	LCD_WriteRAM_Prepare();
 	while (1)
 	{
-
-		if (bUsbOutReady)
+		if (RxFlag)
 		{
-			usbOutDone();
-			usbCheckUpdate(); // 检测是否为升级信息
-			if (strcmp(UsbBuffer, "@REFRESH#") == 0)
+			p_UsbBuffer = RxBuffer;
+
+			// 发送图片数据时候一般都是大数据包，会占满64字节的缓冲
+			// 小于64的极大概率是命令包
+			if (RxCount < 64)
 			{
-				P20 = !P20;
-				LCD_Set_Window(0, 0, 320, 240);
-				LCD_WriteRAM_Prepare(); // 开始写入GRAM
-				SPI_DC = 1;
-			}
-			else
-			{
-				p_UsbBuffer = UsbBuffer;
-				for (i = 0; i < 64; i++)
+				checkISP();
+
+				// 瞎定义的格式，包长31，是奇数，减少与颜色数据重复的概率
+				// 三个@开头，第四位是命令
+				if (
+					RxCount == 31 &&
+					*(RxBuffer + 0) == '@' &&
+					*(RxBuffer + 1) == '@' &&
+					*(RxBuffer + 2) == '@')
 				{
-					SPDAT = *(p_UsbBuffer++);
-					_nop_();
-					_nop_();
-					_nop_();
-					_nop_();
-					_nop_();
-					_nop_();
-					_nop_();
-					_nop_();
-					_nop_();
-					_nop_();
-					_nop_();
-					_nop_();
-					_nop_();
-					_nop_();
-					_nop_();
-					_nop_();
+					RxCount = 0;
+
+					switch (*(RxBuffer + 3))
+					{
+					case SET_WINDOW:
+					{
+						LCD_Set_Window(*(u16*)(RxBuffer + 4), *(u16*)(RxBuffer + 4 + 2), *(u16*)(RxBuffer + 4 + 4), *(u16*)(RxBuffer + 4 + 6));
+						LCD_WriteRAM_Prepare(); // 开始写入GRAM
+						SPI_DC = 1;
+						P23 = ~P23;
+					}
+					break;
+					default:
+						break;
+					}
 				}
 			}
+
+			for (i = 0; i < RxCount; i++)
+			{
+				SPDAT = *(p_UsbBuffer++);
+				_nop_();
+				_nop_();
+				_nop_();
+				_nop_();
+				_nop_();
+				_nop_();
+				_nop_();
+				_nop_();
+				_nop_();
+				_nop_();
+				_nop_();
+				_nop_();
+				_nop_();
+				_nop_();
+				_nop_();
+				_nop_();
+			}
+			uart_recv_done(); // 对接收的数据处理完成后,一定要调用一次这个函数,以便CDC接收下一笔串口数据
 		}
 	}
 }

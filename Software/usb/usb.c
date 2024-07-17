@@ -1,69 +1,34 @@
-/*---------------------------------------------------------------------*/
-/* --- STC MCU Limited ------------------------------------------------*/
-/* --- STC 1T Series MCU Demo Programme -------------------------------*/
-/* --- Mobile: (86)13922805190 ----------------------------------------*/
-/* --- Fax: 86-0513-55012956,55012947,55012969 ------------------------*/
-/* --- Tel: 86-0513-55012928,55012929,55012966 ------------------------*/
-/* --- Web: www.STCAI.com ---------------------------------------------*/
-/* --- BBS: www.STCAIMCU.com  -----------------------------------------*/
-/* --- QQ:  800003751 -------------------------------------------------*/
-/*---------------------------------------------------------------------*/
-
 #include "stc.h"
 #include "usb.h"
 #include "usb_req_std.h"
 #include "usb_req_class.h"
 #include "usb_req_vendor.h"
 #include "util.h"
-#include <string.h>
+#include "uart.h"
+
 BYTE DeviceState;
 SETUP Setup;
 EPSTATE Ep0State;
 BYTE InEpState;
 BYTE OutEpState;
-BYTE xdata UsbBuffer[256];
-
-BYTE bUsbOutReady = 0;
-BYTE bUsbInBusy = 0;
-BYTE bUsbUpdateEnable = 1;
-
-extern char *USER_STCISPCMD;
-
-void ___sleep_us(WORD n)
-{
-    while (n--)
-    {
-        _nop_();
-        _nop_();
-        _nop_();
-        _nop_();
-    }
-}
-
-void ___sleep_ms(WORD n)
-{
-    while (n--)
-        ___sleep_us(10000);
-}
-
 
 void usb_init()
 {
-    P3M0 &= ~0x03;
+    P3M0 &= ~0x03;	//ÉèÖÃÎª¸ß×è
     P3M1 |= 0x03;
-
+    
     IRC48MCR = 0x80;
     while (!(IRC48MCR & 0x01));
 
     USBCLK = 0x00;
     USBCON = 0x90;
-
+    
     usb_write_reg(FADDR, 0x00);
-    usb_write_reg(POWER, 0x09);
+    usb_write_reg(POWER, 0x08);
     usb_write_reg(INTRIN1E, 0x3f);
     usb_write_reg(INTROUT1E, 0x3f);
     usb_write_reg(INTRUSBE, 0x07);
-    usb_write_reg(POWER, 0x01);
+    usb_write_reg(POWER, 0x00);
 
     DeviceState = DEVSTATE_DEFAULT;
     Ep0State.bState = EPSTATE_IDLE;
@@ -106,7 +71,7 @@ BYTE usb_read_fifo(BYTE fifo, BYTE *pdat)
     return ret;
 }
 
-void usb_write_fifo(BYTE fifo, BYTE *pdat, BYTE cnt)
+void usb_write_fifo(BYTE fifo, BYTE *pdat, BYTE cnt) reentrant
 {
 	while (cnt--)
 	{
@@ -114,14 +79,11 @@ void usb_write_fifo(BYTE fifo, BYTE *pdat, BYTE cnt)
     }
 }
 
-void usb_isr() interrupt USB_VECTOR
+void usb_isr() interrupt 25
 {
     BYTE intrusb;
     BYTE intrin;
     BYTE introut;
-    BYTE adrTemp;
-
-    adrTemp = USBADR;     //USBADR ï¿½Ö³ï¿½ï¿½ï¿½ï¿½æ£¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ­ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ USBADR ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï£ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½Þ¸ï¿½ï¿½ï¿? USBADR ï¿½ï¿½ï¿½ï¿½
 
     intrusb = usb_read_reg(INTRUSB);
     intrin = usb_read_reg(INTRIN1);
@@ -165,8 +127,6 @@ void usb_isr() interrupt USB_VECTOR
 #endif
 
     if (intrusb & SUSIF) usb_suspend();
-
-    USBADR = adrTemp;    //USBADR ï¿½Ö³ï¿½ï¿½Ö¸ï¿½
 }
 
 void usb_resume()
@@ -235,12 +195,12 @@ void usb_setup()
 
     if (csr & STSTL)
     {
-        usb_write_reg(CSR0, csr & ~STSTL);  //ï¿½ï¿½ï¿½Ô¼ï¿½Ð´ 0 ï¿½ï¿½ï¿½ï¿½ï¿½Ö¾Î?
+        usb_write_reg(CSR0, csr & ~SDSTL);
         Ep0State.bState = EPSTATE_IDLE;
     }
     if (csr & SUEND)
     {
-        usb_write_reg(CSR0, csr | SSUEND);  //ï¿½ï¿½ SSUEND Ð´ 1 ï¿½ï¿½ï¿? SUEND ï¿½ï¿½Ö¾Î»
+        usb_write_reg(CSR0, csr & ~SSUEND);
     }
 
     switch (Ep0State.bState)
@@ -346,22 +306,14 @@ void usb_ctrl_out()
     {
         usb_write_reg(CSR0, SOPRDY);
     }
+
+    usb_uart_settings();
 }
 
 void usb_bulk_intr_in(BYTE *pData, BYTE bSize, BYTE ep)
 {
     usb_write_fifo((BYTE)(FIFO0 + ep), pData, bSize);
     usb_write_reg(INCSR1, INIPRDY);
-}
-
-BYTE usb_bulk_intr_out(BYTE *pData, BYTE ep)
-{
-    BYTE cnt;
-
-    cnt = usb_read_fifo((BYTE)(FIFO0 + ep), pData);
-    usb_write_reg(OUTCSR1, 0);
-
-    return cnt;
 }
 
 #ifdef EN_EP1IN
@@ -379,7 +331,6 @@ void usb_in_ep1()
     {
         usb_write_reg(INCSR1, 0);
     }
-		    //bUsbInBusy = 0;
 }
 #endif
 
@@ -468,9 +419,8 @@ void usb_out_ep1()
     }
     if (csr & OUTOPRDY)
     {
-        // usb_bulk_intr_in(UsbBuffer, usb_bulk_intr_out(UsbBuffer, 1), 1);   
-usb_bulk_intr_out(UsbBuffer, 1)			;
-        bUsbOutReady = 1;
+        RxCount = usb_read_fifo(FIFO1, RxBuffer);
+        RxFlag = 1;
     }
 }
 #endif
@@ -547,41 +497,3 @@ void usb_out_ep5()
 }
 #endif
 
-void usbCheckUpdate(){                                           
-    if (strcmp(UsbBuffer, USER_STCISPCMD) == 0)
-    {
-        usb_write_reg(OUTCSR1, 0);
-
-        USBCON = 0x00;
-        USBCLK = 0x00;
-        IRC48MCR = 0x00;
-
-        ___sleep_ms(10);
-
-        IAP_CONTR = 0x60;
-        while (1);
-    }
-}
-
-//void usb_bulk_intr_in(BYTE *pData, BYTE bSize, BYTE ep)
-//void usb_write_fifo(BYTE fifo, BYTE *pdat, BYTE cnt)
-void usbSend2PC(BYTE* buffer)
-{
-    BYTE cnt = 64;
-    
-    usb_write_reg(INDEX, 1);
-    while (usb_read_reg(INCSR1) & INIPRDY);
-	while (cnt--)
-	{
-        usb_write_reg((BYTE)(FIFO0 + 1), *buffer++);
-    }
-    usb_write_reg(INCSR1, INIPRDY);    
-    //bUsbInBusy = 1;
-}
-
-void usbOutDone()
-{
-    usb_write_reg(INDEX, 1);
-    usb_write_reg(OUTCSR1, 0);
-    bUsbOutReady = 0;
-}

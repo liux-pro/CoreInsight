@@ -1,6 +1,7 @@
 #ifndef __USB_H__
 #define __USB_H__
 
+
 #define DESC_DEVICE             0x01
 #define DESC_CONFIGURATION      0x02
 #define DESC_STRING             0x03
@@ -69,7 +70,7 @@ void usb_init();
 BYTE usb_read_reg(BYTE addr);
 void usb_write_reg(BYTE addr, BYTE dat);
 BYTE usb_read_fifo(BYTE fifo, BYTE *pdat);
-void usb_write_fifo(BYTE fifo, BYTE *pdat, BYTE cnt);
+void usb_write_fifo(BYTE fifo, BYTE *pdat, BYTE cnt) reentrant;
 
 void usb_setup_stall();
 void usb_setup_in();
@@ -96,13 +97,10 @@ void usb_out_ep3();
 void usb_out_ep4();
 void usb_out_ep5();
 
-
 extern BYTE DeviceState;
 extern SETUP Setup;
 extern EPSTATE Ep0State;
 extern BYTE InEpState;
 extern BYTE OutEpState;
-
-extern BYTE xdata UsbBuffer[256];
 
 #endif

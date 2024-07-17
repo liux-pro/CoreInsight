@@ -469,6 +469,16 @@
               <FileType>5</FileType>
               <FilePath>.\usb\util.h</FilePath>
             </File>
+            <File>
+              <FileName>uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\usb\uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>uart.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\usb\uart.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
