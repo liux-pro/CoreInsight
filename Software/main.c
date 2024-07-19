@@ -103,10 +103,10 @@ void configBlackLightPWM()
 	// PWM1P_3 P6.0
 	P6_MODE_IO_PU(GPIO_Pin_0);
 
-	PWMx_InitStructure.PWM_Mode = CCMRn_PWM_MODE1;	   // 模式,		CCMRn_FREEZE,CCMRn_MATCH_VALID,CCMRn_MATCH_INVALID,CCMRn_ROLLOVER,CCMRn_FORCE_INVALID,CCMRn_FORCE_VALID,CCMRn_PWM_MODE1,CCMRn_PWM_MODE2
-	PWMx_InitStructure.PWM_Duty = 1000; // PWM占空比时间, 0~Period
-	PWMx_InitStructure.PWM_EnoSelect = ENO1P;		   // 输出通道选择,	ENO1P,ENO1N,ENO2P,ENO2N,ENO3P,ENO3N,ENO4P,ENO4N / ENO5P,ENO6P,ENO7P,ENO8P
-	PWM_Configuration(PWM1, &PWMx_InitStructure);	   // 初始化PWM1
+	PWMx_InitStructure.PWM_Mode = CCMRn_PWM_MODE1; // 模式,		CCMRn_FREEZE,CCMRn_MATCH_VALID,CCMRn_MATCH_INVALID,CCMRn_ROLLOVER,CCMRn_FORCE_INVALID,CCMRn_FORCE_VALID,CCMRn_PWM_MODE1,CCMRn_PWM_MODE2
+	PWMx_InitStructure.PWM_Duty = 1000;			   // PWM占空比时间, 0~Period
+	PWMx_InitStructure.PWM_EnoSelect = ENO1P;	   // 输出通道选择,	ENO1P,ENO1N,ENO2P,ENO2N,ENO3P,ENO3N,ENO4P,ENO4N / ENO5P,ENO6P,ENO7P,ENO8P
+	PWM_Configuration(PWM1, &PWMx_InitStructure);  // 初始化PWM1
 
 	PWMx_InitStructure.PWM_Period = 1750;		   // 周期时间,   0~65535
 	PWMx_InitStructure.PWM_DeadTime = 0;		   // 死区发生器设置, 0~255
@@ -135,12 +135,14 @@ void main(void)
 
 	SPI_config1();
 
-	LCD_Init(); // 初始化LCD
+	LCD_Init();			// 初始化LCD
 	LCD_Display_Dir(2); // 屏幕方向
 
 	LCD_Clear(BLACK);
 	LCD_Set_Window(0, 0, 320, 240);
 	LCD_WriteRAM_Prepare();
+	SPI_DC = 1;
+
 	configBlackLightPWM();
 
 	while (1)
@@ -184,22 +186,7 @@ void main(void)
 			for (i = 0; i < RxCount; i++)
 			{
 				SPDAT = *(p_UsbBuffer++);
-				_nop_();
-				_nop_();
-				_nop_();
-				_nop_();
-				_nop_();
-				_nop_();
-				_nop_();
-				_nop_();
-				_nop_();
-				_nop_();
-				_nop_();
-				_nop_();
-				_nop_();
-				_nop_();
-				_nop_();
-				_nop_();
+				NOP(16);
 			}
 			uart_recv_done(); // 对接收的数据处理完成后,一定要调用一次这个函数,以便CDC接收下一笔串口数据
 		}
