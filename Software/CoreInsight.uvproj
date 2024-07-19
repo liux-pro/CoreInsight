@@ -394,6 +394,16 @@
               <FileType>5</FileType>
               <FilePath>.\library\STC32G_Switch.h</FilePath>
             </File>
+            <File>
+              <FileName>STC32G_PWM.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\library\STC32G_PWM.c</FilePath>
+            </File>
+            <File>
+              <FileName>STC32G_Timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\library\STC32G_Timer.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

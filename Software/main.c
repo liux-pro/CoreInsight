@@ -13,7 +13,8 @@
 #include "STC32G_Clock.h"
 #include <string.h>
 #include "communicate.h"
-
+#include "STC32G_PWM.h"
+#include "STC32G_Timer.h"
 /*
 IRC频率必须是 35.000MHz
 */
@@ -45,7 +46,8 @@ void SPI_config1(void)
 
 	SPI_SW(SPI_P54_P13_P14_P15); // SPI_P54_P13_P14_P15,SPI_P22_P23_P24_P25,SPI_P54_P40_P41_P43,SPI_P35_P34_P33_P32
 
-	P1_MODE_IO_PU(GPIO_Pin_3 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7);
+	P1_MODE_IO_PU(GPIO_Pin_3 | GPIO_Pin_5 | GPIO_Pin_6);
+	P4_MODE_IO_PU(GPIO_Pin_7);
 	P1_PULL_UP_ENABLE(GPIO_Pin_3 | GPIO_Pin_5);
 	P1_SPEED_HIGH(GPIO_Pin_3 | GPIO_Pin_5); // 电平转换速度快（提高IO口翻转速度）
 	{
@@ -93,7 +95,28 @@ void checkISP()
 	}
 }
 
-u8 xdata b[1024*6]={0};
+u8 xdata b[1024 * 6] = {0};
+void configBlackLightPWM()
+{
+	PWMx_InitDefine PWMx_InitStructure;
+
+	// PWM1P_3 P6.0
+	P6_MODE_IO_PU(GPIO_Pin_0);
+
+	PWMx_InitStructure.PWM_Mode = CCMRn_PWM_MODE1;	   // 模式,		CCMRn_FREEZE,CCMRn_MATCH_VALID,CCMRn_MATCH_INVALID,CCMRn_ROLLOVER,CCMRn_FORCE_INVALID,CCMRn_FORCE_VALID,CCMRn_PWM_MODE1,CCMRn_PWM_MODE2
+	PWMx_InitStructure.PWM_Duty = 1000; // PWM占空比时间, 0~Period
+	PWMx_InitStructure.PWM_EnoSelect = ENO1P;		   // 输出通道选择,	ENO1P,ENO1N,ENO2P,ENO2N,ENO3P,ENO3N,ENO4P,ENO4N / ENO5P,ENO6P,ENO7P,ENO8P
+	PWM_Configuration(PWM1, &PWMx_InitStructure);	   // 初始化PWM1
+
+	PWMx_InitStructure.PWM_Period = 1750;		   // 周期时间,   0~65535
+	PWMx_InitStructure.PWM_DeadTime = 0;		   // 死区发生器设置, 0~255
+	PWMx_InitStructure.PWM_MainOutEnable = ENABLE; // 主输出使能, ENABLE,DISABLE
+	PWMx_InitStructure.PWM_CEN_Enable = ENABLE;	   // 使能计数器, ENABLE,DISABLE
+	PWM_Configuration(PWMA, &PWMx_InitStructure);  // 初始化PWM通用寄存器,  PWMA,PWMB
+
+	PWM1_USE_P60P61();
+	NVIC_PWM_Init(PWMA, DISABLE, Priority_0);
+}
 
 void main(void)
 {
@@ -113,12 +136,13 @@ void main(void)
 	SPI_config1();
 
 	LCD_Init(); // 初始化LCD
-
 	LCD_Display_Dir(2); // 屏幕方向
 
 	LCD_Clear(BLACK);
 	LCD_Set_Window(0, 0, 320, 240);
 	LCD_WriteRAM_Prepare();
+	configBlackLightPWM();
+
 	while (1)
 	{
 		if (RxFlag)
@@ -145,7 +169,7 @@ void main(void)
 					{
 					case SET_WINDOW:
 					{
-						LCD_Set_Window(*(u16*)(RxBuffer + 4), *(u16*)(RxBuffer + 4 + 2), *(u16*)(RxBuffer + 4 + 4), *(u16*)(RxBuffer + 4 + 6));
+						LCD_Set_Window(*(u16 *)(RxBuffer + 4), *(u16 *)(RxBuffer + 4 + 2), *(u16 *)(RxBuffer + 4 + 4), *(u16 *)(RxBuffer + 4 + 6));
 						LCD_WriteRAM_Prepare(); // 开始写入GRAM
 						SPI_DC = 1;
 						P23 = ~P23;

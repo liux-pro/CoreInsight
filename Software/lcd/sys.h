@@ -13,8 +13,6 @@
 #define	s16 int
 #define	s32 long
 
-#define     MAIN_Fosc       24000000L   //定义主时钟
-
 void delay_ms(unsigned int count);
 void delay_us(int count);
 
