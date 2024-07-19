@@ -167,7 +167,7 @@ void main(void)
 
 					switch (*(RxBuffer + 3))
 					{
-					case SET_WINDOW:
+					case CMD_SET_WINDOW:
 					{
 						LCD_Set_Window(*(u16 *)(RxBuffer + 4), *(u16 *)(RxBuffer + 4 + 2), *(u16 *)(RxBuffer + 4 + 4), *(u16 *)(RxBuffer + 4 + 6));
 						LCD_WriteRAM_Prepare(); // ¿ªÊ¼Ð´ÈëGRAM
