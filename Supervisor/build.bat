@@ -1,0 +1,1 @@
+cl /O2 /Oy /GL RemoteHWInfo.cpp /link /OPT:REF /OPT:ICF /LTCG /OUT:RemoteHWInfo.exe
