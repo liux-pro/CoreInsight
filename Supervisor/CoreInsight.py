@@ -55,20 +55,16 @@ def send_image(image):
 
 @njit
 def convert_image_to_rgb565(image_rgb):
-    # Get the dimensions of the image
     height, width, _ = image_rgb.shape
+    image_rgb565 = np.empty((height, width), dtype=np.uint16)
 
-    # Create an empty RGB565 image
-    image_rgb565 = np.zeros((height, width), dtype=np.uint16)
-
-    # Convert to RGB565 format
     for i in range(height):
         for j in range(width):
-            r = image_rgb[i, j, 0] >> 3  # Take the top 5 bits of red
-            g = image_rgb[i, j, 1] >> 2  # Take the top 6 bits of green
-            b = image_rgb[i, j, 2] >> 3  # Take the top 5 bits of blue
-            rgb565 = (r << 11) | (g << 5) | b
-            image_rgb565[i, j] = rgb565
+            pixel = image_rgb[i, j]
+            r = pixel[0] >> 3  # 提取红色通道的前5位
+            g = pixel[1] >> 2  # 提取绿色通道的前6位
+            b = pixel[2] >> 3  # 提取蓝色通道的前5位
+            image_rgb565[i, j] = (r << 11) | (g << 5) | b  # 组合成RGB565格式
 
     return image_rgb565.flatten()
 
@@ -78,8 +74,8 @@ process = subprocess.Popen(
     creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
 )
 
-w = 320
-h = 240
+w = 200
+h = 100
 
 i = 1
 
@@ -103,6 +99,7 @@ for _ in range(99999):
     draw.text(text_position, text, font=font, fill=text_color)
 
     # 将 Pillow 图像转换为 NumPy 数组
+    # todo 优化 zero copy
     image_np = np.array(image)
 
     send_image(image_np)
