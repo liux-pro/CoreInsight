@@ -23,44 +23,16 @@ void LCD_WR_REG(u16 REG)
 { 
 	SPI_DC = 0;//RS=0 命令
     SPDAT = (u8)(REG & 0xff );
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
+	NOP(16);
+
 }
 //写数据函数
 void LCD_WR_DATA(u16 DATA)
 {	
 	SPI_DC = 1;//RS=1 数据
     SPDAT = DATA;
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
+	NOP(16);
+
 }
 
 //写寄存器
@@ -83,39 +55,11 @@ void LCD_WriteRAM(u16 RGB_Code)
 {							    
 	SPI_DC = 1;
 	SPDAT = (u8)(RGB_Code >> 8);
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
+	NOP(16);
+
 	SPDAT = (u8)(RGB_Code & 0xff );
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
-	_nop_();
+	NOP(16);
+
 }
 
 //当mdk -O1时间优化时需要设置
