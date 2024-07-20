@@ -1,31 +1,26 @@
+import subprocess
 import time
 import cv2
 import numpy as np
 import serial
 import time
 import serial.tools.list_ports
-
+from PIL import Image, ImageDraw, ImageFont
+import numpy as np
+import cv2
 from communicate import *
+from multiprocessing import Process
 
 from numba import njit
 
 from SerialHelper import SerialHelper
 
-w = 96
-h = 54
 vid = 0x34BF
 pid = 0xFFFF
 
-# Read the image
-cap = cv2.VideoCapture("input.mp4")
-
-# 列出所有串口
-ports = serial.tools.list_ports.comports()
-
 # 初始化串口
 s = SerialHelper(vid, pid)
-
-time.sleep(2)
+s._connect()
 
 
 def create_cmd(x, y, w, h):
@@ -78,19 +73,39 @@ def convert_image_to_rgb565(image_rgb):
     return image_rgb565.flatten()
 
 
+process = subprocess.Popen(
+    ['RemoteHWInfo.exe', '-LOG', str(0)],
+    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+)
+
+w = 320
+h = 240
+
+i = 1
+
 for _ in range(99999):
     start_time = time.time()
-    s.write(create_cmd(100, 100, w, h))
-    # Send the data in chunks
-    ret, image = cap.read()
+    s.write(create_cmd(0, 0, w, h))
 
-    if not ret:
-        break
-    image = cv2.resize(image, (w, h))
-    # Convert color space from BGR to RGB
-    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image = Image.new('RGB', (w, h), (0, 0, 0))
 
-    send_image(image_rgb)
+    # 加载自定义字体（请替换为自定义字体文件的路径）
+    font = ImageFont.truetype('AlimamaDaoLiTi.ttf', 100)
+
+    # 创建一个 ImageDraw 对象
+    draw = ImageDraw.Draw(image)
+
+    # 绘制文本
+    text = str(i)
+    i += 1
+    text_position = (0, 0)
+    text_color = (255, 255, 255)  # 白色
+    draw.text(text_position, text, font=font, fill=text_color)
+
+    # 将 Pillow 图像转换为 NumPy 数组
+    image_np = np.array(image)
+
+    send_image(image_np)
 
     elapsed_time = time.time() - start_time
     print(f"Data sent in {elapsed_time:.2f} seconds")
