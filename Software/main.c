@@ -44,12 +44,22 @@ void SPI_config1(void)
 	SPI_Init(&SPI_InitStructure);
 	// NVIC_SPI_Init(ENABLE,Priority_3);		//中断使能, ENABLE/DISABLE; 优先级(低到高) Priority_0,Priority_1,Priority_2,Priority_3
 
+
+#ifdef LOONG
+    //使用 屠龙刀三 开发板接口连接LCD
+	SPI_SW(SPI_P22_P23_P24_P25); // SPI_P54_P13_P14_P15,SPI_P22_P23_P24_P25,SPI_P54_P40_P41_P43,SPI_P35_P34_P33_P32
+
+	P2_MODE_IO_PU(GPIO_Pin_3 | GPIO_Pin_5 | GPIO_Pin_0 | GPIO_Pin_1);
+	P2_SPEED_HIGH(GPIO_Pin_3 | GPIO_Pin_5); // 电平转换速度快（提高IO口翻转速度）
+#else
 	SPI_SW(SPI_P54_P13_P14_P15); // SPI_P54_P13_P14_P15,SPI_P22_P23_P24_P25,SPI_P54_P40_P41_P43,SPI_P35_P34_P33_P32
 
 	P1_MODE_IO_PU(GPIO_Pin_3 | GPIO_Pin_5 | GPIO_Pin_6);
 	P4_MODE_IO_PU(GPIO_Pin_7);
-	P1_PULL_UP_ENABLE(GPIO_Pin_3 | GPIO_Pin_5);
 	P1_SPEED_HIGH(GPIO_Pin_3 | GPIO_Pin_5); // 电平转换速度快（提高IO口翻转速度）
+#endif
+
+
 	{
 		/*
 			这个函数不满足需求，改库函数不太好的原则，这里把他的函数体复制出来，改一改。
@@ -127,7 +137,6 @@ void main(void)
 	WTST = 0;  // 设置程序指令延时参数，赋值为0可将CPU执行指令的速度设置为最快
 	EAXFR = 1; // 扩展寄存器(XFR)访问使能
 	CKCON = 0; // 提高访问XRAM速度
-	P2_MODE_IO_PU(GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3);
 
 	uart_init();
 	usb_init();
@@ -174,7 +183,6 @@ void main(void)
 						LCD_Set_Window(*(u16 *)(RxBuffer + 4), *(u16 *)(RxBuffer + 4 + 2), *(u16 *)(RxBuffer + 4 + 4), *(u16 *)(RxBuffer + 4 + 6));
 						LCD_WriteRAM_Prepare(); // 开始写入GRAM
 						SPI_DC = 1;
-						P23 = ~P23;
 					}
 					break;
 					default:

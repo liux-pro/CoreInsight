@@ -63,8 +63,9 @@ void usb_set_ctrl_line_state()
         return;
     }
     
-    P21=!(Setup.wValueL&0x01);	//DTR
-    P22=!(Setup.wValueL&0x02);	//RTS
+    //可以从这里读取DTR和RTS的状态
+    // Setup.wValueL&0x01	//DTR
+    // Setup.wValueL&0x02	//RTS
 	
     usb_setup_status();
 }

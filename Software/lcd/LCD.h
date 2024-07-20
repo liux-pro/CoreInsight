@@ -34,12 +34,23 @@ extern u16  BACK_COLOR; //背景颜色.默认为白色
 ////////////////////////////////////////////////////////////////////
 //-----------------LCD端口定义---------------- 
 
-// sbit SPI_CS     = P4^6;			//片选端口											
-sbit SPI_SDI    = P1^3;			//数据输入											
-sbit SPI_SDI_RD = P1^3;		  //SDA单通道时候 作为数据输出		
-sbit SPI_RST    = P1^6;			//复位  	    		 							
-sbit SPI_SCK    = P1^5;			//时钟													
-sbit SPI_DC     = P4^7;			//数据/命令      								   
+#ifdef LOONG
+    //使用 屠龙刀三 开发板接口连接LCD
+	sbit SPI_SDI    = P2^3;			//数据输入											
+	sbit SPI_SDI_RD = P2^3;		  //SDA单通道时候 作为数据输出		
+	sbit SPI_RST    = P2^0;			//复位  	    		 							
+	sbit SPI_SCK    = P2^5;			//时钟													
+	sbit SPI_DC     = P2^1;			//数据/命令   
+#else
+	sbit SPI_SDI    = P1^3;			//数据输入											
+	sbit SPI_SDI_RD = P1^3;		  //SDA单通道时候 作为数据输出		
+	sbit SPI_RST    = P1^6;			//复位  	    		 							
+	sbit SPI_SCK    = P1^5;			//时钟													
+	sbit SPI_DC     = P4^7;			//数据/命令      
+#endif
+
+
+
 // sbit LCD_LED    = P3^3; 		//背光 开关  
 
 	 
