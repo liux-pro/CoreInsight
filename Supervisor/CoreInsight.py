@@ -11,7 +11,7 @@ from communicate import *
 # 常量定义
 VID = 0x34BF
 PID = 0xFFFF
-FONT_PATH = 'AlimamaDaoLiTi.ttf'
+FONT_PATH = 'MapleMono-SC-NF-Bold.ttf'
 BG_PATH = 'background.jpg'
 GAUGE_FONT_SIZE = 36
 LABEL_FONT_SIZE = 20
@@ -101,7 +101,7 @@ def draw_gauge_image(image, value, font_path=FONT_PATH, font_size=GAUGE_FONT_SIZ
 
 
 def update_display(bg_image, sensor_readings):
-    coordinates = [(80, 0, 100, 50), (80, 50, 100, 50)]
+    coordinates = [(75, 0, 100, 50), (75, 50, 100, 50)]
     values = [int(sensor_readings.total_cpu_usage), int(sensor_readings.physical_memory_load)]
     for i, (x, y, w, h) in enumerate(coordinates):
         tile = bg_image.crop((x, y, x + w, y + h))
@@ -116,7 +116,7 @@ def update_display(bg_image, sensor_readings):
             speed_kbps /= 1024
             unit_index += 1
 
-        return f"{speed_kbps:.0f} {units[unit_index]}"
+        return f"{speed_kbps:.0f}{units[unit_index]}"
 
     coordinates = [(80, 150, 110, 36), (80, 180, 110, 36)]
     labels = [format_speed(sensor_readings.current_up_rate), format_speed(sensor_readings.current_dl_rate)]
@@ -127,6 +127,16 @@ def update_display(bg_image, sensor_readings):
         text_width = draw.textlength(labels[i], font=ImageFont.truetype(FONT_PATH, 24))
 
         draw.text((w - text_width, 0), labels[i], font=ImageFont.truetype(FONT_PATH, 24))
+        send_image(tile, x, y)
+
+    coordinates = [(176, 0, 144, 36), (176, 36, 144, 36)]
+    values = [f"CPU {sensor_readings.cpu_temperature:.1f}°C", f"GPU {sensor_readings.gpu_temperature:.1f}°C"]
+    for i, (x, y, w, h) in enumerate(coordinates):
+        tile = bg_image.crop((x, y, x + w, y + h))
+        draw = ImageDraw.Draw(tile)
+
+
+        draw.text((0, 0), values[i], font=ImageFont.truetype(FONT_PATH, 24))
         send_image(tile, x, y)
 
 
@@ -142,12 +152,23 @@ for i, (x, y, w, h) in enumerate(coordinates):
     send_image(tile, x, y)
 
 coordinates = [(0, 150, 150, 36), (0, 180, 150, 36)]
-labels = [f"上传 :", f"下载 :"]
+labels = [f"上传:", f"下载:"]
 for i, (x, y, w, h) in enumerate(coordinates):
     tile = bg_image.crop((x, y, x + w, y + h))
     draw = ImageDraw.Draw(tile)
     draw.text((0, 0), labels[i], font=ImageFont.truetype(FONT_PATH, 24))
     send_image(tile, x, y)
+
+
+x=230
+y=100
+w=64
+h=64
+cpu_logo = Image.open(f"amd.png")
+cpu_logo = cpu_logo.resize((w, int(w * cpu_logo.height / cpu_logo.width)))
+tile = bg_image.crop((x, y, x + w, y + h))
+tile.paste(cpu_logo, (0, 0), cpu_logo)
+send_image(tile, x, y)
 
 while True:
     sensor_readings = get_sensor_readings()

@@ -1,3 +1,5 @@
+import re
+
 import requests
 import time
 import subprocess
@@ -19,6 +21,9 @@ class SensorReadings:
         # Determine CPU temperature
         cpu_temp = readings.get('CPU Package') or readings.get('CPU Core')
         self.cpu_temperature = cpu_temp if cpu_temp is not None else 'CPU Package or CPU Core not found'
+
+        devices = str(data["hwinfo"]["sensors"])
+        self.cpu = re.search(r'CPU \[#0]: ([A-Z]+)',devices).group(1).lower()
 
 
 def start_hwinfo_process():
