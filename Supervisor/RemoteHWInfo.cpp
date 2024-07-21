@@ -977,7 +977,7 @@ void CreateServer()
 			struct sockaddr_in serverAddress = {0};
 
 			serverAddress.sin_family = AF_INET;
-			serverAddress.sin_addr.S_un.S_addr = INADDR_ANY;
+			serverAddress.sin_addr.S_un.S_addr = inet_addr("127.0.0.1");;
 			serverAddress.sin_port = htons(Port);
 
 			if (LOG(bind(serverSocket, (sockaddr*) &serverAddress, sizeof(serverAddress))) == 0)
