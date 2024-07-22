@@ -1,22 +1,27 @@
 import math
+import multiprocessing
+import threading
 import time
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from numba import njit
 
+import tray
 from RemoteHWInfo import get_sensor_readings
 from SerialHelper import SerialHelper
 from communicate import *
 
+from pyinstaller_tool import *
+
+close_splash()
+
 # 常量定义
 VID = 0x34BF
 PID = 0xFFFF
-FONT_PATH = 'MapleMono-SC-NF-Bold.ttf'
-BG_PATH = 'background.jpg'
-GAUGE_FONT_SIZE = 36
-LABEL_FONT_SIZE = 20
+FONT_PATH = resource_path('MapleMono-SC-NF-Bold.ttf')
+BG_PATH = resource_path('background.jpg')
+
 CMD_PREFIX = b'@@@'
-CMD_FILL_BYTE = 0
 
 # 初始化串口
 serial_helper = SerialHelper(VID, PID)
@@ -30,7 +35,7 @@ def create_cmd(x, y, w, h):
     cmd.extend(int(y).to_bytes(2, byteorder='big'))
     cmd.extend(int(w).to_bytes(2, byteorder='big'))
     cmd.extend(int(h).to_bytes(2, byteorder='big'))
-    cmd.extend([CMD_FILL_BYTE] * (31 - len(cmd)))
+    cmd.extend([0x00] * (31 - len(cmd)))
     return cmd
 
 
@@ -75,7 +80,7 @@ def resize_and_crop(image, target_width, target_height):
     return resized_image.crop((left, top, right, bottom))
 
 
-def draw_gauge_image(image, value, font_path=FONT_PATH, font_size=GAUGE_FONT_SIZE, text_offset_x=0, text_offset_y=0):
+def draw_gauge_image(image, value, font_path=FONT_PATH, font_size=36, text_offset_x=0, text_offset_y=0):
     w, h = image.size
     padding = 5
     inner_w, inner_h = w - 2 * padding, h - 2 * padding
@@ -135,7 +140,6 @@ def update_display(bg_image, sensor_readings):
         tile = bg_image.crop((x, y, x + w, y + h))
         draw = ImageDraw.Draw(tile)
 
-
         draw.text((0, 0), values[i], font=ImageFont.truetype(FONT_PATH, 24))
         send_image(tile, x, y)
 
@@ -159,17 +163,34 @@ for i, (x, y, w, h) in enumerate(coordinates):
     draw.text((0, 0), labels[i], font=ImageFont.truetype(FONT_PATH, 24))
     send_image(tile, x, y)
 
-
-x=230
-y=100
-w=64
-h=64
-cpu_logo = Image.open(f"amd.png")
+x = 230
+y = 100
+w = 64
+h = 64
+cpu_logo = Image.open(resource_path(f"{get_sensor_readings().cpu}.png"))
 cpu_logo = cpu_logo.resize((w, int(w * cpu_logo.height / cpu_logo.width)))
 tile = bg_image.crop((x, y, x + w, y + h))
 tile.paste(cpu_logo, (0, 0), cpu_logo)
 send_image(tile, x, y)
 
-while True:
-    sensor_readings = get_sensor_readings()
-    update_display(bg_image, sensor_readings)
+
+if __name__ == "__main__":
+    # Create an event object
+    exit_event = multiprocessing.Event()
+
+    # Run the tray icon in a separate thread
+    tray_thread = threading.Thread(target=tray.run_tray, args=(exit_event,), daemon=True)
+    tray_thread.start()
+
+    # Main program loop
+    print("Tray icon is running in a separate thread. Main program is running.")
+    try:
+        while not exit_event.is_set():
+            sensor_readings = get_sensor_readings()
+            update_display(bg_image, sensor_readings)
+
+    except KeyboardInterrupt:
+        print("Keyboard interrupt received. Exiting program.")
+        exit_event.set()
+
+    print("Main program is exiting.")

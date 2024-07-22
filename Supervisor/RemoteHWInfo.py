@@ -4,7 +4,7 @@ import requests
 import time
 import subprocess
 import atexit
-
+from pyinstaller_tool import *
 
 class SensorReadings:
     def __init__(self, data):
@@ -30,8 +30,8 @@ def start_hwinfo_process():
     # Start the RemoteHWInfo.exe process
     global hwinfo_process
     hwinfo_process = subprocess.Popen(
-        ['RemoteHWInfo.exe', '-LOG', '0'],
-        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+        [resource_path('RemoteHWInfo.exe'), '-LOG', '0'],
+        creationflags=subprocess.CREATE_NO_WINDOW
     )
 
     # Register a function to kill the process on script exit
