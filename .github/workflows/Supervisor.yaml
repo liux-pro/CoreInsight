@@ -3,7 +3,7 @@ name: PyInstaller Windows Build
 on:
   push:
     branches:
-      - main
+      - master
   workflow_dispatch:
 
 
