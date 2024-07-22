@@ -16,3 +16,4 @@ pywin32-ctypes==0.2.2
 requests==2.32.3
 urllib3==2.2.2
 zipp==3.19.2
+pystray==0.19.5
