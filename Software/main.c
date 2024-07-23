@@ -44,9 +44,8 @@ void SPI_config1(void)
 	SPI_Init(&SPI_InitStructure);
 	// NVIC_SPI_Init(ENABLE,Priority_3);		//中断使能, ENABLE/DISABLE; 优先级(低到高) Priority_0,Priority_1,Priority_2,Priority_3
 
-
 #ifdef LOONG
-    //使用 屠龙刀三 开发板接口连接LCD
+	// 使用 屠龙刀三 开发板接口连接LCD
 	SPI_SW(SPI_P22_P23_P24_P25); // SPI_P54_P13_P14_P15,SPI_P22_P23_P24_P25,SPI_P54_P40_P41_P43,SPI_P35_P34_P33_P32
 
 	P2_MODE_IO_PU(GPIO_Pin_3 | GPIO_Pin_5 | GPIO_Pin_0 | GPIO_Pin_1);
@@ -58,7 +57,6 @@ void SPI_config1(void)
 	P4_MODE_IO_PU(GPIO_Pin_7);
 	P1_SPEED_HIGH(GPIO_Pin_3 | GPIO_Pin_5); // 电平转换速度快（提高IO口翻转速度）
 #endif
-
 
 	{
 		/*
@@ -106,19 +104,20 @@ void checkISP()
 }
 
 u8 xdata b[1024 * 6] = {0};
-void configBlackLightPWM()
+void configBlackLightPWM(u8 brightness)
 {
+	const u16 period = (u32)MAIN_Fosc / (u32)(20*1000);
 	PWMx_InitDefine PWMx_InitStructure;
 
 	// PWM1P_3 P6.0
 	P6_MODE_IO_PU(GPIO_Pin_0);
 
 	PWMx_InitStructure.PWM_Mode = CCMRn_PWM_MODE1; // 模式,		CCMRn_FREEZE,CCMRn_MATCH_VALID,CCMRn_MATCH_INVALID,CCMRn_ROLLOVER,CCMRn_FORCE_INVALID,CCMRn_FORCE_VALID,CCMRn_PWM_MODE1,CCMRn_PWM_MODE2
-	PWMx_InitStructure.PWM_Duty = 1000;			   // PWM占空比时间, 0~Period
+	PWMx_InitStructure.PWM_Duty = (u32)brightness * (u32)period / (u32)255;			   // PWM占空比时间, 0~Period
 	PWMx_InitStructure.PWM_EnoSelect = ENO1P;	   // 输出通道选择,	ENO1P,ENO1N,ENO2P,ENO2N,ENO3P,ENO3N,ENO4P,ENO4N / ENO5P,ENO6P,ENO7P,ENO8P
 	PWM_Configuration(PWM1, &PWMx_InitStructure);  // 初始化PWM1
 
-	PWMx_InitStructure.PWM_Period = 1750;		   // 周期时间,   0~65535
+	PWMx_InitStructure.PWM_Period = period;		   // 周期时间,   0~65535
 	PWMx_InitStructure.PWM_DeadTime = 0;		   // 死区发生器设置, 0~255
 	PWMx_InitStructure.PWM_MainOutEnable = ENABLE; // 主输出使能, ENABLE,DISABLE
 	PWMx_InitStructure.PWM_CEN_Enable = ENABLE;	   // 使能计数器, ENABLE,DISABLE
@@ -148,11 +147,10 @@ void main(void)
 	LCD_Display_Dir(2); // 屏幕方向
 
 	LCD_Clear(BLACK);
+	configBlackLightPWM(255);
 	LCD_Set_Window(0, 0, 320, 240);
 	LCD_WriteRAM_Prepare();
 	SPI_DC = 1;
-
-	configBlackLightPWM();
 
 	while (1)
 	{
@@ -185,6 +183,11 @@ void main(void)
 						SPI_DC = 1;
 					}
 					break;
+					case CMD_SET_BRIGHTNESS:
+					{
+						configBlackLightPWM(*(u8 *)(RxBuffer + 4));
+					}
+					break;
 					default:
 						break;
 					}
@@ -194,7 +197,9 @@ void main(void)
 			for (i = 0; i < RxCount; i++)
 			{
 				SPDAT = *(p_UsbBuffer++);
-				NOP(16);
+				while (SPIF == 0)
+					;
+				SPI_ClearFlag();
 			}
 			uart_recv_done(); // 对接收的数据处理完成后,一定要调用一次这个函数,以便CDC接收下一笔串口数据
 		}

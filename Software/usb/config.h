@@ -1,8 +1,6 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-#define FOSC                    24000000UL
-
 #define EN_EP1IN
 //#define EN_EP2IN
 //#define EN_EP3IN
