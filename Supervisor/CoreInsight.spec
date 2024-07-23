@@ -11,6 +11,7 @@ a = Analysis(
         ("intel.png", "."),
         ("amd.png", "."),
         ("background.jpg", "."),
+        ("lock.jpg", "."),
         ("RemoteHWInfo.exe", ".")
     ],
     hiddenimports=[],
@@ -53,4 +54,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon='CoreInsight.ico'
 )

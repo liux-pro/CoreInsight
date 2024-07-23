@@ -2,6 +2,8 @@ from PIL import Image, ImageDraw
 import pystray
 from pystray import MenuItem as item
 
+from PoserSetting import screenOff
+
 
 def create_image(width, height, color1, color2):
     # Generate an image and draw a pattern
@@ -21,13 +23,9 @@ def on_exit(icon, item, exit_event):
     exit_event.set()
 
 
-def on_hello(icon, item):
-    print("Hello, World!")
-
-
 def run_tray(exit_event):
     # Create the menu
-    menu = (item('Hello', on_hello), item('Exit', lambda icon, item: on_exit(icon, item, exit_event)))
+    menu = (item('关闭屏幕', screenOff), item('退出', lambda icon, item: on_exit(icon, item, exit_event)))
 
     # Create the icon
     icon = pystray.Icon("test_icon")

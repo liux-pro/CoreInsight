@@ -2,12 +2,12 @@ import math
 import multiprocessing
 import threading
 import time
-import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from numba import njit
 
 import tray
+from PowerSettingChecker import PowerSettingChecker
 from RemoteHWInfo import get_sensor_readings
+from ScreenLockChecker import ScreenLockChecker
 from SerialHelper import SerialHelper
 from communicate import *
 
@@ -28,7 +28,7 @@ serial_helper = SerialHelper(VID, PID)
 serial_helper._connect()
 
 
-def create_cmd(x, y, w, h):
+def create_cmd_set_window(x, y, w, h):
     cmd = bytearray(CMD_PREFIX)
     cmd.append(CMD_SET_WINDOW)
     cmd.extend(int(x).to_bytes(2, byteorder='big'))
@@ -39,33 +39,58 @@ def create_cmd(x, y, w, h):
     return cmd
 
 
+def create_cmd_set_brightness(brightness):
+    """设置背光亮度 0~255 """
+    cmd = bytearray(CMD_PREFIX)
+    cmd.append(CMD_SET_BRIGHTNESS)
+    cmd.extend(int(brightness).to_bytes(1, byteorder='big'))
+    cmd.extend([0x00] * (31 - len(cmd)))
+    print(cmd)
+    return cmd
+
+
+def send_data(cmd):
+    serial_helper.write(cmd)
+
+
 def send_image(image, x=0, y=0):
-    if isinstance(image, Image.Image):
-        image = np.array(image)
-    data_to_send = convert_image_to_rgb565(image)
-    h, w, _ = image.shape
-    serial_helper.write(create_cmd(x, y, w, h))
+    data_to_send = convert_pillow_image_to_rgb565(image)
+    w, h = image.size
+
+    send_data(create_cmd_set_window(x, y, w, h))
     chunk_size = 64
     for i in range(0, len(data_to_send), chunk_size // 2):
         chunk = data_to_send[i:i + (chunk_size // 2)]
         byte_chunk = bytearray()
         for value in chunk:
             byte_chunk.extend(int(value).to_bytes(2, byteorder='big'))
-        serial_helper.write(byte_chunk)
+        send_data(byte_chunk)
 
 
-@njit
-def convert_image_to_rgb565(image_rgb):
-    height, width, _ = image_rgb.shape
-    image_rgb565 = np.empty((height, width), dtype=np.uint16)
-    for i in range(height):
-        for j in range(width):
-            pixel = image_rgb[i, j]
-            r = pixel[0] >> 3
-            g = pixel[1] >> 2
-            b = pixel[2] >> 3
-            image_rgb565[i, j] = (r << 11) | (g << 5) | b
-    return image_rgb565.flatten()
+def convert_pillow_image_to_rgb565(image):
+    """
+    将Pillow图像转换为RGB565格式。
+
+    参数:
+    image (PIL.Image): Pillow图像对象，模式为"RGB"。
+
+    返回:
+    list: 扁平化的一维RGB565格式数据列表。
+    """
+
+    if image.mode != "RGB":
+        raise ValueError("输入图像必须为RGB模式")
+
+    # 使用getdata获取像素数据
+    pixels = list(image.getdata())
+
+    # 使用列表推导式转换像素数据为RGB565
+    rgb565_data = [
+        ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)
+        for r, g, b in pixels
+    ]
+
+    return rgb565_data
 
 
 def resize_and_crop(image, target_width, target_height):
@@ -144,35 +169,44 @@ def update_display(bg_image, sensor_readings):
         send_image(tile, x, y)
 
 
+def init_background(bg_image):
+    send_image(bg_image)
+    coordinates = [(0, 10, 80, 50), (0, 60, 80, 50)]
+    labels = ["CPU", "Mem"]
+    for i, (x, y, w, h) in enumerate(coordinates):
+        tile = bg_image.crop((x, y, x + w, y + h))
+        draw = ImageDraw.Draw(tile)
+        draw.text((0, 0), labels[i], font=ImageFont.truetype(FONT_PATH, 36))
+        send_image(tile, x, y)
+
+    coordinates = [(0, 150, 150, 36), (0, 180, 150, 36)]
+    labels = [f"上传:", f"下载:"]
+    for i, (x, y, w, h) in enumerate(coordinates):
+        tile = bg_image.crop((x, y, x + w, y + h))
+        draw = ImageDraw.Draw(tile)
+        draw.text((0, 0), labels[i], font=ImageFont.truetype(FONT_PATH, 24))
+        send_image(tile, x, y)
+
+    x = 230
+    y = 100
+    w = 64
+    h = 64
+    cpu_logo = Image.open(resource_path(f"{get_sensor_readings().cpu}.png"))
+    cpu_logo = cpu_logo.resize((w, int(w * cpu_logo.height / cpu_logo.width)))
+    tile = bg_image.crop((x, y, x + w, y + h))
+    tile.paste(cpu_logo, (0, 0), cpu_logo)
+    send_image(tile, x, y)
+
+
 bg_image = resize_and_crop(Image.open(BG_PATH), 320, 240)
-send_image(bg_image)
+init_background(bg_image)
 
-coordinates = [(0, 10, 80, 50), (0, 60, 80, 50)]
-labels = ["CPU", "Mem"]
-for i, (x, y, w, h) in enumerate(coordinates):
-    tile = bg_image.crop((x, y, x + w, y + h))
-    draw = ImageDraw.Draw(tile)
-    draw.text((0, 0), labels[i], font=ImageFont.truetype(FONT_PATH, 36))
-    send_image(tile, x, y)
+powerSettingChecker = PowerSettingChecker()
+powerSettingChecker.start()  # Start the listener in a new thread
 
-coordinates = [(0, 150, 150, 36), (0, 180, 150, 36)]
-labels = [f"上传:", f"下载:"]
-for i, (x, y, w, h) in enumerate(coordinates):
-    tile = bg_image.crop((x, y, x + w, y + h))
-    draw = ImageDraw.Draw(tile)
-    draw.text((0, 0), labels[i], font=ImageFont.truetype(FONT_PATH, 24))
-    send_image(tile, x, y)
+screenLockChecker = ScreenLockChecker()
 
-x = 230
-y = 100
-w = 64
-h = 64
-cpu_logo = Image.open(resource_path(f"{get_sensor_readings().cpu}.png"))
-cpu_logo = cpu_logo.resize((w, int(w * cpu_logo.height / cpu_logo.width)))
-tile = bg_image.crop((x, y, x + w, y + h))
-tile.paste(cpu_logo, (0, 0), cpu_logo)
-send_image(tile, x, y)
-
+lock = resize_and_crop(Image.open(resource_path(f"lock.jpg")), 320, 240)
 
 if __name__ == "__main__":
     # Create an event object
@@ -186,6 +220,20 @@ if __name__ == "__main__":
     print("Tray icon is running in a separate thread. Main program is running.")
     try:
         while not exit_event.is_set():
+
+            if (powerSettingChecker.all_notifications_received() is True
+                    and powerSettingChecker.console_display_state is False):
+                send_data(create_cmd_set_brightness(0))
+                while not powerSettingChecker.console_display_state:
+                    time.sleep(1)
+                send_data(create_cmd_set_brightness(255))
+
+            if screenLockChecker.check_screen_lock():
+                send_image(lock)
+                while screenLockChecker.check_screen_lock():
+                    time.sleep(1)
+                init_background(bg_image)
+
             sensor_readings = get_sensor_readings()
             update_display(bg_image, sensor_readings)
 
