@@ -105,6 +105,8 @@ void LCD_WriteReg(u16 LCD_Reg, u16 LCD_RegValue);
 void LCD_WriteRAM_Prepare(void);
 void LCD_WriteRAM(u16 RGB_Code);
 
+void SoftSPI_WriteByte(u8 Byte);
+
 // RGB_Code u16
 #define LCD_WriteRAM_Inline(RGB_Code)          \
 	do                                   \

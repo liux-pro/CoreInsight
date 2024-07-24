@@ -33,52 +33,14 @@ void Delay1000ms(void) //@24.000MHz
 /****************  SPI初始化函数 *****************/
 void SPI_config1(void)
 {
-	SPI_InitTypeDef SPI_InitStructure;
-	SPI_InitStructure.SPI_Enable = ENABLE;		  // SPI启动    ENABLE, DISABLE
-	SPI_InitStructure.SPI_SSIG = DISABLE;		  // 片选位     ENABLE, DISABLE
-	SPI_InitStructure.SPI_FirstBit = SPI_MSB;	  // 移位方向   SPI_MSB, SPI_LSB
-	SPI_InitStructure.SPI_Mode = SPI_Mode_Master; // 主从选择   SPI_Mode_Master, SPI_Mode_Slave
-	SPI_InitStructure.SPI_CPOL = SPI_CPOL_High;	  // 时钟相位   SPI_CPOL_High,   SPI_CPOL_Low
-	SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;  // 数据边沿   SPI_CPHA_1Edge,  SPI_CPHA_2Edge
-	SPI_InitStructure.SPI_Speed = SPI_Speed_2;	  // SPI速度    SPI_Speed_4, SPI_Speed_8, SPI_Speed_16, SPI_Speed_2
-	SPI_Init(&SPI_InitStructure);
-	// NVIC_SPI_Init(ENABLE,Priority_3);		//中断使能, ENABLE/DISABLE; 优先级(低到高) Priority_0,Priority_1,Priority_2,Priority_3
-
 #ifdef LOONG
-	// 使用 屠龙刀三 开发板接口连接LCD
-	SPI_SW(SPI_P22_P23_P24_P25); // SPI_P54_P13_P14_P15,SPI_P22_P23_P24_P25,SPI_P54_P40_P41_P43,SPI_P35_P34_P33_P32
-
 	P2_MODE_IO_PU(GPIO_Pin_3 | GPIO_Pin_5 | GPIO_Pin_0 | GPIO_Pin_1);
 	P2_SPEED_HIGH(GPIO_Pin_3 | GPIO_Pin_5); // 电平转换速度快（提高IO口翻转速度）
 #else
-	SPI_SW(SPI_P54_P13_P14_P15); // SPI_P54_P13_P14_P15,SPI_P22_P23_P24_P25,SPI_P54_P40_P41_P43,SPI_P35_P34_P33_P32
-
 	P1_MODE_IO_PU(GPIO_Pin_3 | GPIO_Pin_5 | GPIO_Pin_6);
 	P4_MODE_IO_PU(GPIO_Pin_7);
 	P1_SPEED_HIGH(GPIO_Pin_3 | GPIO_Pin_5); // 电平转换速度快（提高IO口翻转速度）
 #endif
-
-	{
-		/*
-			这个函数不满足需求，改库函数不太好的原则，这里把他的函数体复制出来，改一改。
-			HSPllClkConfig(MCLKSEL_HIRC, PLL_96M, 2); 系统时钟选择,PLL时钟选择,时钟分频系数
-		*/
-		MainClockSel(MCLKSEL_HIRC); // 系统时钟选择, MCLKSEL_HIRC/MCLKSEL_XIRC/MCLKSEL_X32K/MCLKSEL_I32K/MCLKSEL_PLL/MCLKSEL_PLL2/MCLKSEL_I48M
-
-		// HIRC 在下载时调为35M，四分频后8M多一点，将将满足输入频率12M（±35%）的需求
-		USBCLK &= ~PCKI_MSK;
-		USBCLK |= PCKI_D4; // PLL输入时钟4分频
-
-		PLLClockSel(PLL_96M);	// PLL时钟选择, PLL_96M/PLL_144M
-		PLLEnable(ENABLE);		// PLL倍频使能, ENABLE/DISABLE
-		delay_ms(2);			// 等待PLL锁频
-		HSIOClockSel(HSCK_PLL); // 高速IO时钟选择, HSCK_MCLK/HSCK_PLL
-		HSClockDiv(2);			// 高速IO时钟分频系数
-	}
-
-	HSSPI_Enable();
-	// SPI（HSPI）的频率 = HIRC 35M 四分频 输入 PLL 出来变成 96M 二分频 48M 进入 HSPI外设 SPI自己也有2分频 最终24M
-	// 对于stc32g12k128 ，由于IO速度原因，5v环境最高33M，3.3v环境最高20M，这里的24M是略微超限的。
 }
 
 /**
@@ -106,16 +68,16 @@ void checkISP()
 u8 xdata b[1024 * 6] = {0};
 void configBlackLightPWM(u8 brightness)
 {
-	const u16 period = (u32)MAIN_Fosc / (u32)(20*1000);
+	const u16 period = (u32)MAIN_Fosc / (u32)(20 * 1000);
 	PWMx_InitDefine PWMx_InitStructure;
 
 	// PWM1P_3 P6.0
 	P6_MODE_IO_PU(GPIO_Pin_0);
 
-	PWMx_InitStructure.PWM_Mode = CCMRn_PWM_MODE1; // 模式,		CCMRn_FREEZE,CCMRn_MATCH_VALID,CCMRn_MATCH_INVALID,CCMRn_ROLLOVER,CCMRn_FORCE_INVALID,CCMRn_FORCE_VALID,CCMRn_PWM_MODE1,CCMRn_PWM_MODE2
-	PWMx_InitStructure.PWM_Duty = (u32)brightness * (u32)period / (u32)255;			   // PWM占空比时间, 0~Period
-	PWMx_InitStructure.PWM_EnoSelect = ENO1P;	   // 输出通道选择,	ENO1P,ENO1N,ENO2P,ENO2N,ENO3P,ENO3N,ENO4P,ENO4N / ENO5P,ENO6P,ENO7P,ENO8P
-	PWM_Configuration(PWM1, &PWMx_InitStructure);  // 初始化PWM1
+	PWMx_InitStructure.PWM_Mode = CCMRn_PWM_MODE1;							// 模式,		CCMRn_FREEZE,CCMRn_MATCH_VALID,CCMRn_MATCH_INVALID,CCMRn_ROLLOVER,CCMRn_FORCE_INVALID,CCMRn_FORCE_VALID,CCMRn_PWM_MODE1,CCMRn_PWM_MODE2
+	PWMx_InitStructure.PWM_Duty = (u32)brightness * (u32)period / (u32)255; // PWM占空比时间, 0~Period
+	PWMx_InitStructure.PWM_EnoSelect = ENO1P;								// 输出通道选择,	ENO1P,ENO1N,ENO2P,ENO2N,ENO3P,ENO3N,ENO4P,ENO4N / ENO5P,ENO6P,ENO7P,ENO8P
+	PWM_Configuration(PWM1, &PWMx_InitStructure);							// 初始化PWM1
 
 	PWMx_InitStructure.PWM_Period = period;		   // 周期时间,   0~65535
 	PWMx_InitStructure.PWM_DeadTime = 0;		   // 死区发生器设置, 0~255
@@ -129,9 +91,7 @@ void configBlackLightPWM(u8 brightness)
 
 void main(void)
 {
-	u16 line;
-	u32 i, j;
-	u16 color;
+	u8 i;
 	BYTE *p_UsbBuffer;
 	WTST = 0;  // 设置程序指令延时参数，赋值为0可将CPU执行指令的速度设置为最快
 	EAXFR = 1; // 扩展寄存器(XFR)访问使能
@@ -194,13 +154,28 @@ void main(void)
 				}
 			}
 
-			for (i = 0; i < RxCount; i++)
+			if (RxCount == 64)
 			{
-				SPDAT = *(p_UsbBuffer++);
-				while (SPIF == 0)
-					;
-				SPI_ClearFlag();
+				for (i = 0; i < 8; i++)
+				{
+					SoftSPI_WriteByte(*(p_UsbBuffer++));
+					SoftSPI_WriteByte(*(p_UsbBuffer++));
+					SoftSPI_WriteByte(*(p_UsbBuffer++));
+					SoftSPI_WriteByte(*(p_UsbBuffer++));
+					SoftSPI_WriteByte(*(p_UsbBuffer++));
+					SoftSPI_WriteByte(*(p_UsbBuffer++));
+					SoftSPI_WriteByte(*(p_UsbBuffer++));
+					SoftSPI_WriteByte(*(p_UsbBuffer++));
+				}
 			}
+			else
+			{
+				for (i = 0; i < RxCount; i++)
+				{
+					SoftSPI_WriteByte(*(p_UsbBuffer++));
+				}
+			}
+
 			uart_recv_done(); // 对接收的数据处理完成后,一定要调用一次这个函数,以便CDC接收下一笔串口数据
 		}
 	}

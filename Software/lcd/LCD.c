@@ -15,24 +15,54 @@ u16 BACK_COLOR=0xFFFF;  //背景色
 _lcd_dev lcddev;
 
 
+void SoftSPI_WriteByte(u8 Byte)
+{ 
+    // 逐位传输字节
+    SPI_SDA = (Byte & 0x80) >> 7;  // 传输最高位
+    SPI_SCK = 0;
+    SPI_SCK = 1;
 
+    SPI_SDA = (Byte & 0x40) >> 6;  // 传输第2位
+    SPI_SCK = 0;
+    SPI_SCK = 1;
+
+    SPI_SDA = (Byte & 0x20) >> 5;  // 传输第3位
+    SPI_SCK = 0;
+    SPI_SCK = 1;
+
+    SPI_SDA = (Byte & 0x10) >> 4;  // 传输第4位
+    SPI_SCK = 0;
+    SPI_SCK = 1;
+
+    SPI_SDA = (Byte & 0x08) >> 3;  // 传输第5位
+    SPI_SCK = 0;
+    SPI_SCK = 1;
+
+    SPI_SDA = (Byte & 0x04) >> 2;  // 传输第6位
+    SPI_SCK = 0;
+    SPI_SCK = 1;
+
+    SPI_SDA = (Byte & 0x02) >> 1;  // 传输第7位
+    SPI_SCK = 0;
+    SPI_SCK = 1;
+
+    SPI_SDA = Byte & 0x01;         // 传输最低位
+    SPI_SCK = 0;
+    SPI_SCK = 1;
+}
 
 	 					    
 //写寄存器函数
-void LCD_WR_REG(u16 REG)
+void LCD_WR_REG(u8 REG)
 { 
 	SPI_DC = 0;//RS=0 命令
-    SPDAT = (u8)(REG & 0xff );
-	NOP(16);
-
+	SoftSPI_WriteByte(REG);
 }
 //写数据函数
-void LCD_WR_DATA(u16 DATA)
+void LCD_WR_DATA(u8 DATA)
 {	
 	SPI_DC = 1;//RS=1 数据
-    SPDAT = DATA;
-	NOP(16);
-
+	SoftSPI_WriteByte(DATA);
 }
 
 //写寄存器
@@ -54,12 +84,8 @@ void LCD_WriteRAM_Prepare(void)
 void LCD_WriteRAM(u16 RGB_Code)
 {							    
 	SPI_DC = 1;
-	SPDAT = (u8)(RGB_Code >> 8);
-	NOP(16);
-
-	SPDAT = (u8)(RGB_Code & 0xff );
-	NOP(16);
-
+	SoftSPI_WriteByte((u8)(RGB_Code >> 8));	    		 
+	SoftSPI_WriteByte((u8)(RGB_Code & 0xff ));		 
 }
 
 //当mdk -O1时间优化时需要设置
