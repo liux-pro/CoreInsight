@@ -2,6 +2,9 @@ import math
 import multiprocessing
 import threading
 import time
+from datetime import datetime
+from functools import wraps
+
 from PIL import Image, ImageDraw, ImageFont
 
 import tray
@@ -19,13 +22,13 @@ close_splash()
 VID = 0x34BF
 PID = 0xFFFF
 FONT_PATH = resource_path('MapleMono-SC-NF-Bold.ttf')
+FONT2_PATH = resource_path("DSEG7Modern-Bold.ttf")
 BG_PATH = resource_path('background.jpg')
 
 CMD_PREFIX = b'@@@'
 
 # 初始化串口
 serial_helper = SerialHelper(VID, PID)
-serial_helper._connect()
 
 
 def create_cmd_set_window(x, y, w, h):
@@ -130,6 +133,45 @@ def draw_gauge_image(image, value, font_path=FONT_PATH, font_size=36, text_offse
     return image
 
 
+def run(interval):
+    """
+    装饰器，限制函数在指定时间间隔内只能被调用一次。
+
+    :param interval: 时间间隔（以秒为单位）
+    """
+
+    def decorator(func):
+        last_run = [0]  # 使用列表来保存可变的last_run时间戳
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            current_time = time.time()
+            if current_time - last_run[0] >= interval:
+                result = func(*args, **kwargs)
+                last_run[0] = current_time  # 更新last_run时间戳
+                return result
+            else:
+                return None
+
+        return wrapper
+
+    return decorator
+
+
+@run(20)
+def update_data(bg_image):
+    current_time = datetime.now()
+
+    coordinates = [(2, 200, 210, 36)]
+    values = [f"{current_time.year % 100:02}年{current_time.month:02}月{current_time.day:02}日"]
+    for i, (x, y, w, h) in enumerate(coordinates):
+        tile = bg_image.crop((x, y, x + w, y + h))
+        draw = ImageDraw.Draw(tile)
+
+        draw.text((0, 0), values[i], font=ImageFont.truetype(FONT_PATH, 28))
+        send_image(tile, x, y)
+
+
 def update_display(bg_image, sensor_readings):
     coordinates = [(75, 0, 100, 50), (75, 50, 100, 50)]
     values = [int(sensor_readings.total_cpu_usage), int(sensor_readings.physical_memory_load)]
@@ -148,7 +190,7 @@ def update_display(bg_image, sensor_readings):
 
         return f"{speed_kbps:.0f}{units[unit_index]}"
 
-    coordinates = [(80, 150, 110, 36), (80, 180, 110, 36)]
+    coordinates = [(80, 130, 110, 36), (80, 160, 110, 36)]
     labels = [format_speed(sensor_readings.current_up_rate), format_speed(sensor_readings.current_dl_rate)]
     for i, (x, y, w, h) in enumerate(coordinates):
         tile = bg_image.crop((x, y, x + w, y + h))
@@ -168,6 +210,18 @@ def update_display(bg_image, sensor_readings):
         draw.text((0, 0), values[i], font=ImageFont.truetype(FONT_PATH, 24))
         send_image(tile, x, y)
 
+    current_time = datetime.now()
+
+    coordinates = [(210, 200, 100, 36)]
+    values = [f"{current_time.hour:02}:{current_time.minute:02}"]
+    for i, (x, y, w, h) in enumerate(coordinates):
+        tile = bg_image.crop((x, y, x + w, y + h))
+        draw = ImageDraw.Draw(tile)
+
+        draw.text((0, 0), values[i], font=ImageFont.truetype(FONT2_PATH, 30))
+        send_image(tile, x, y)
+    update_data(bg_image)
+
 
 def init_background(bg_image):
     send_image(bg_image)
@@ -179,7 +233,7 @@ def init_background(bg_image):
         draw.text((0, 0), labels[i], font=ImageFont.truetype(FONT_PATH, 36))
         send_image(tile, x, y)
 
-    coordinates = [(0, 150, 150, 36), (0, 180, 150, 36)]
+    coordinates = [(0, 130, 150, 36), (0, 160, 150, 36)]
     labels = [f"上传:", f"下载:"]
     for i, (x, y, w, h) in enumerate(coordinates):
         tile = bg_image.crop((x, y, x + w, y + h))
@@ -220,6 +274,11 @@ if __name__ == "__main__":
     print("Tray icon is running in a separate thread. Main program is running.")
     try:
         while not exit_event.is_set():
+            if serial_helper.ser is None or (serial_helper.ser and not serial_helper.ser.is_open):
+                time.sleep(1)
+
+            if serial_helper.has_reconnected():
+                init_background(bg_image)
 
             if (powerSettingChecker.all_notifications_received() is True
                     and powerSettingChecker.console_display_state is False):

@@ -1,21 +1,11 @@
 from PIL import Image, ImageDraw
 import pystray
-from pystray import MenuItem as item
+from pystray import MenuItem
 
 from PoserSetting import screenOff
+from pyinstaller_tool import resource_path
 
-
-def create_image(width, height, color1, color2):
-    # Generate an image and draw a pattern
-    image = Image.new('RGB', (width, height), color1)
-    dc = ImageDraw.Draw(image)
-    dc.rectangle(
-        (width // 2, 0, width, height // 2),
-        fill=color2)
-    dc.rectangle(
-        (0, height // 2, width // 2, height),
-        fill=color2)
-    return image
+import webbrowser
 
 
 def on_exit(icon, item, exit_event):
@@ -25,12 +15,16 @@ def on_exit(icon, item, exit_event):
 
 def run_tray(exit_event):
     # Create the menu
-    menu = (item('关闭屏幕', screenOff), item('退出', lambda icon, item: on_exit(icon, item, exit_event)))
+    menu = (
+        MenuItem('主页', lambda: webbrowser.open("https://oshwhub.com/legend-tech/core-insight")),
+        MenuItem('关闭屏幕', screenOff),
+        MenuItem('退出', lambda icon, item: on_exit(icon, item, exit_event)),
+    )
 
     # Create the icon
-    icon = pystray.Icon("test_icon")
-    icon.icon = create_image(64, 64, 'black', 'white')
-    icon.title = "Test Icon"
+    icon = pystray.Icon("icon")
+    icon.icon = Image.open(resource_path("CoreInsight.ico"))
+    icon.title = "CoreInsight"
     icon.menu = menu
 
     # Run the icon

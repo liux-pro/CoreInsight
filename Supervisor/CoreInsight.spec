@@ -7,6 +7,8 @@ a = Analysis(
     binaries=[],
     datas=[
         ("MapleMono-SC-NF-Bold.ttf", "."),
+        ("DSEG7Modern-Bold.ttf", "."),
+        ("CoreInsight.ico", "."),
         ("nvidia.png", "."),
         ("intel.png", "."),
         ("amd.png", "."),
@@ -24,7 +26,7 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 splash = Splash(
-    'background.jpg',
+    'splash.jpg',
     binaries=a.binaries,
     datas=a.datas,
     text_pos=None,

@@ -9,9 +9,6 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -19,7 +16,7 @@ jobs:
     - name: Setup Python Environment
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.12'
 
     - name: Install Dependencies
       shell: pwsh
@@ -32,5 +29,5 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: CoreInsight-${{ matrix.python-version }}.exe
+        name: CoreInsight.exe
         path: Supervisor/dist/CoreInsight.exe
