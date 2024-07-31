@@ -252,7 +252,7 @@ def init_background(bg_image):
     send_image(tile, x, y)
 
 
-bg_image = resize_and_crop(Image.open(BG_PATH), 320, 240)
+bg_image = resize_and_crop(Image.open("background.jpg" if os.path.isfile("background.jpg") else resource_path(BG_PATH)), 320, 240)
 init_background(bg_image)
 
 powerSettingChecker = PowerSettingChecker()
